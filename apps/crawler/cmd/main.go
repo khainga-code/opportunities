@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/pitabwire/frame"
-	frameclient "github.com/pitabwire/frame/client"
 	fconfig "github.com/pitabwire/frame/config"
 	"github.com/pitabwire/frame/datastore"
 	securityhttp "github.com/pitabwire/frame/security/interceptors/httptor"
@@ -109,16 +108,18 @@ func main() {
 		log.WithField("count", n).Info("seed sources loaded")
 	}
 
-	// HTTP client for connectors. Frame's HTTPClientManager wraps the
-	// stdlib client with OTEL trace propagation and retry policy; we
-	// layer the connector retry/backoff loop on top in pkg/connectors/httpx.
-	// Frame's manager.Client(ctx) returns a client we share by default;
-	// when the operator wants a tighter per-request timeout we build a
-	// dedicated client via Frame's NewHTTPClient helper.
-	httpDoer := frameclient.NewHTTPClient(ctx,
-		frameclient.WithHTTPTimeout(time.Duration(cfg.HTTPTimeoutSec)*time.Second),
-		frameclient.WithHTTPTraceRequests(),
-	)
+	// HTTP client for connectors — stdlib client, no OAuth wrapping.
+	// Frame's NewHTTPClient auto-attaches an OAuth2 token source when
+	// OAUTH2_* env is configured, which sends Bearer headers to every
+	// outbound request including public job-board URLs. Public sites
+	// reject (or worse, accept) those tokens, and our own signer
+	// endpoint correctly refuses to mint assertions for arbitrary
+	// audiences (Hydra returns invalid_client). Use a plain stdlib
+	// client; the connector retry/backoff loop in pkg/connectors/httpx
+	// already provides resilience.
+	httpDoer := &http.Client{
+		Timeout: time.Duration(cfg.HTTPTimeoutSec) * time.Second,
+	}
 	httpClient := httpx.NewClientFromDoer(httpDoer, cfg.UserAgent)
 
 	// AI extractor — OpenAI-compatible back-end. Reads INFERENCE_* first,
@@ -145,7 +146,12 @@ func main() {
 			RerankAPIKey:     cfg.RerankAPIKey,
 			RerankModel:      cfg.RerankModel,
 			Registry:         reg,
-			HTTPClient:       svc.HTTPClientManager().Client(ctx),
+			// Plain stdlib client: the inference back-end is an external
+			// API (Groq, OpenAI, Cloudflare AI Gateway) that authenticates
+			// with INFERENCE_API_KEY directly, not Hydra-issued JWTs.
+			// Frame's HTTPClientManager would attach an OAuth Bearer
+			// targeting our own audience list and fail at the signer.
+			HTTPClient: httpDoer,
 		})
 		log.WithField("url", infBase).WithField("model", infModel).Info("AI extraction enabled")
 	}
