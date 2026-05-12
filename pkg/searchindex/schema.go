@@ -81,13 +81,16 @@ func Apply(ctx context.Context, c *Client) error {
 }
 
 // isDuplicateColumn matches Manticore's "duplicate column" error from
-// repeated ALTER TABLE ADD COLUMN calls.
+// repeated ALTER TABLE ADD COLUMN calls. Manticore phrases it as
+// "already in schema" in 25.x and "duplicate column" in older builds.
 func isDuplicateColumn(err error) bool {
 	if err == nil {
 		return false
 	}
 	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "duplicate") || strings.Contains(msg, "already exists")
+	return strings.Contains(msg, "duplicate") ||
+		strings.Contains(msg, "already exists") ||
+		strings.Contains(msg, "already in schema")
 }
 
 // isAlreadyExists matches Manticore's "table already exists" error.
