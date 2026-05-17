@@ -57,6 +57,17 @@ func main() {
 	}
 	util.Log(ctx).WithField("kinds", reg.Known()).Info("opportunity registry: loaded")
 
+	// Initialize pipeline + Iceberg telemetry instruments. Without this,
+	// every commit-retry path in the writer hits a nil-Counter and SIGSEGVs
+	// (the production-observed cause of the writer crashloop). Frame has
+	// already configured the global OTel provider, so this registers our
+	// custom instruments into it; failures here are non-fatal — we just
+	// log and continue with no metrics rather than block writes on a
+	// telemetry-collector outage.
+	if err := telemetry.Init(); err != nil {
+		util.Log(ctx).WithError(err).Warn("telemetry metrics init failed")
+	}
+
 	// Open the shared cluster Iceberg REST catalog (Lakekeeper).
 	cat, err := icebergclient.LoadCatalog(ctx, icebergclient.CatalogConfig{
 		Name:       cfg.IcebergCatalogName,

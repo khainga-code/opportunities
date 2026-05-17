@@ -21,6 +21,7 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/kv"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
 	"github.com/stawi-opportunities/opportunities/pkg/publish"
+	"github.com/stawi-opportunities/opportunities/pkg/telemetry"
 
 	workercfg "github.com/stawi-opportunities/opportunities/apps/worker/config"
 	workersvc "github.com/stawi-opportunities/opportunities/apps/worker/service"
@@ -65,6 +66,14 @@ func main() {
 		util.Log(ctx).WithError(err).Fatal("opportunity registry: load failed")
 	}
 	util.Log(ctx).WithField("kinds", reg.Known()).Info("opportunity registry: loaded")
+
+	// Initialize pipeline + Iceberg telemetry instruments. The Record*
+	// helpers used by embed/translate paths are nil-safe (they drop the
+	// sample if telemetry was never initialised) so a failure here does
+	// not break the pipeline — but without Init no metrics flow at all.
+	if err := telemetry.Init(); err != nil {
+		util.Log(ctx).WithError(err).Warn("telemetry metrics init failed")
+	}
 
 	// Extractor (AI). nil if no inference URL configured — handlers
 	// degrade gracefully.
