@@ -254,7 +254,7 @@ func TestFlags_UserFlag_RequiresAuth(t *testing.T) {
 
 func TestFlags_UserFlag_HappyPath(t *testing.T) {
 	_, repo, _, jobs, _, mux := flagsTestHarness(t)
-	jobs.rows["abc"] = &job{Slug: "abc", Kind: "job", CanonicalID: "c1"}
+	jobs.rows["abc"] = &job{ID: hashID("abc"), Kind: "job", Title: "Engineer"}
 
 	body := `{"reason":"scam","description":"this is a phishing site"}`
 	req := httptest.NewRequest("POST", "/opportunities/abc/flag", bytes.NewReader([]byte(body)))

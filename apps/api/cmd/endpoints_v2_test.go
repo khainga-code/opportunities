@@ -25,14 +25,17 @@ func stubManticore(responder func(req map[string]any) string) *httptest.Server {
 }
 
 func TestV2Search_ReturnsHitsAndFacets(t *testing.T) {
+	// Polymorphic schema: hits carry numeric ids + schema columns; the
+	// API response surfaces "id" instead of the legacy canonical_id.
+	// Aggregations use schema-aligned facet names (categories, geo_scope).
 	ts := stubManticore(func(_ map[string]any) string {
 		return `{"hits":{"total":2,"hits":[
-            {"_id":1,"_source":{"canonical_id":"c1","slug":"a","title":"Go Dev","company":"Acme","country":"KE","remote_type":"remote","category":"engineering"}},
-            {"_id":2,"_source":{"canonical_id":"c2","slug":"b","title":"Sr Go","company":"Beta","country":"NG","remote_type":"hybrid","category":"engineering"}}
+            {"_id":1,"_source":{"kind":"job","title":"Go Dev","issuing_entity":"Acme","country":"KE","geo_scope":"remote"}},
+            {"_id":2,"_source":{"kind":"job","title":"Sr Go","issuing_entity":"Beta","country":"NG","geo_scope":"hybrid"}}
         ]},"aggregations":{
-            "category":{"buckets":[{"key":"engineering","doc_count":2}]},
+            "categories":{"buckets":[]},
             "country":{"buckets":[{"key":"KE","doc_count":1},{"key":"NG","doc_count":1}]},
-            "remote_type":{"buckets":[]},
+            "geo_scope":{"buckets":[]},
             "employment_type":{"buckets":[]},
             "seniority":{"buckets":[]}
         }}`
@@ -47,7 +50,7 @@ func TestV2Search_ReturnsHitsAndFacets(t *testing.T) {
 	h(rr, req)
 
 	require.Equal(t, http.StatusOK, rr.Code)
-	require.Contains(t, rr.Body.String(), `"canonical_id":"c1"`)
+	require.Contains(t, rr.Body.String(), `"id":1`)
 	require.Contains(t, rr.Body.String(), `"facets"`)
 }
 

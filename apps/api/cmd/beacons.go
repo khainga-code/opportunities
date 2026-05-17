@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/pitabwire/util"
@@ -174,11 +175,13 @@ func topAppliedHandler(jm *jobsManticore, ct *counters.Counters) http.HandlerFun
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
 		}
+		// Slugs are derived from the row's numeric id (decimal string)
+		// since the polymorphic schema has no `slug` column. Counters
+		// is a string-keyed store, so any stable representation works
+		// as long as both writer and reader agree.
 		slugs := make([]string, 0, len(hits))
 		for _, h := range hits {
-			if h.Slug != "" {
-				slugs = append(slugs, h.Slug)
-			}
+			slugs = append(slugs, strconv.FormatUint(h.ID, 10))
 		}
 
 		stats := map[string]counters.Stats{}
@@ -201,9 +204,10 @@ func topAppliedHandler(jm *jobsManticore, ct *counters.Counters) http.HandlerFun
 		}
 		out := make([]row, 0, len(hits))
 		for _, h := range hits {
-			s := stats[h.Slug]
+			slug := strconv.FormatUint(h.ID, 10)
+			s := stats[slug]
 			out = append(out, row{
-				Slug:         h.Slug,
+				Slug:         slug,
 				Title:        h.Title,
 				Kind:         h.Kind,
 				AppliesTotal: s.AppliesTotal,

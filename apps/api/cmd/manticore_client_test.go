@@ -11,9 +11,11 @@ import (
 )
 
 func TestJobsManticore_GetByID(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Manticore returns the row keyed by numeric _id (hashID of the
+	// canonical-id "can-1") with the polymorphic-schema column names.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"hits":{"total":1,"hits":[{"_id":42,"_score":1,"_source":{"canonical_id":"can-1","slug":"acme-engineer","title":"Engineer","company":"Acme","country":"KE","remote_type":"remote","category":"engineering"}}]}}`))
+		_, _ = w.Write([]byte(`{"hits":{"total":1,"hits":[{"_id":42,"_score":1,"_source":{"kind":"job","title":"Engineer","issuing_entity":"Acme","country":"KE","geo_scope":"remote"}}]}}`))
 	}))
 	defer ts.Close()
 
@@ -24,8 +26,9 @@ func TestJobsManticore_GetByID(t *testing.T) {
 	job, err := jm.GetByID(context.Background(), "can-1")
 	require.NoError(t, err)
 	require.NotNil(t, job)
-	require.Equal(t, "acme-engineer", job.Slug)
+	require.Equal(t, uint64(42), job.ID)
 	require.Equal(t, "Engineer", job.Title)
+	require.Equal(t, "Acme", job.IssuingEntity)
 }
 
 func TestJobsManticore_Count(t *testing.T) {

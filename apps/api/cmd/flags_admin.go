@@ -198,7 +198,11 @@ func (a *flagsAdmin) handleUserFlag(w http.ResponseWriter, r *http.Request) {
 	if a.jobs != nil {
 		if j, _ := a.jobs.GetByID(r.Context(), slug); j != nil {
 			kind = j.Kind
-			canonicalID = j.CanonicalID
+			// The polymorphic schema has no canonical_id column; the
+			// numeric ID is the closest stable identifier we can hand
+			// the downstream flag record. Format as decimal so the
+			// repository continues to see a printable string.
+			canonicalID = strconv.FormatUint(j.ID, 10)
 		}
 	}
 

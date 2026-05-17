@@ -55,19 +55,23 @@ func (b *BulkUpserter) Flush(ctx context.Context) error {
 	if len(b.buffer) == 0 {
 		return nil
 	}
-	// Build NDJSON: one {"replace":{...}} JSON object per line. Cluster-
-	// qualified so the buffered writes replicate when the client points
-	// at a multi-replica Manticore cluster (no-op for single-node).
-	idx := b.client.QualifyIndex(b.index)
+	// Build NDJSON: one {"replace":{...}} JSON object per line. Manticore
+	// 25.x requires separate "cluster" + "index" properties in each op;
+	// the legacy "cluster:index" form (still produced by QualifyIndex
+	// for SQL DDL paths) is rejected here with parse_exception and was
+	// the cause of every per-op flush returning 400 until this fix.
+	cluster := b.client.Cluster()
 	var ndjson bytes.Buffer
 	for _, op := range b.buffer {
-		line, err := json.Marshal(map[string]any{
-			"replace": map[string]any{
-				"index": idx,
-				"id":    op.ID,
-				"doc":   op.Doc,
-			},
-		})
+		payload := map[string]any{
+			"index": b.index,
+			"id":    op.ID,
+			"doc":   op.Doc,
+		}
+		if cluster != "" {
+			payload["cluster"] = cluster
+		}
+		line, err := json.Marshal(map[string]any{"replace": payload})
 		if err != nil {
 			return fmt.Errorf("manticore bulk: marshal op id=%d: %w", op.ID, err)
 		}

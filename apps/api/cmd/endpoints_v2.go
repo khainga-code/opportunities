@@ -30,18 +30,32 @@ func v2SearchHandler(jm *jobsManticore, reg *opportunity.Registry, ct *counters.
 		qs := req.URL.Query()
 
 		q := strings.TrimSpace(qs.Get("q"))
-		filter := []map[string]any{{"equals": map[string]any{"status": "active"}}}
+		// activeFilter() replaces the legacy {"status":"active"} clause —
+		// the polymorphic schema has no status column; expired rows are
+		// pruned by deadline (CanonicalExpiredHandler). Caller-supplied
+		// filters compose on top of this universal predicate.
+		filter := append([]map[string]any{}, activeFilter()...)
 		if v := strings.ToUpper(strings.TrimSpace(qs.Get("country"))); v != "" {
 			filter = append(filter, map[string]any{"equals": map[string]any{"country": v}})
 		}
-		if v := strings.TrimSpace(qs.Get("remote_type")); v != "" {
-			filter = append(filter, map[string]any{"equals": map[string]any{"remote_type": v}})
+		// `remote_type` → `geo_scope` (schema column) for callers that
+		// still use the old query-string name. New callers should send
+		// `geo_scope=...` directly.
+		if v := strings.TrimSpace(qs.Get("geo_scope")); v != "" {
+			filter = append(filter, map[string]any{"equals": map[string]any{"geo_scope": v}})
+		} else if v := strings.TrimSpace(qs.Get("remote_type")); v != "" {
+			filter = append(filter, map[string]any{"equals": map[string]any{"geo_scope": v}})
 		}
 		if v := strings.TrimSpace(qs.Get("employment_type")); v != "" {
 			filter = append(filter, map[string]any{"equals": map[string]any{"employment_type": v}})
 		}
+		// `category` (singular) → `categories` (multi64). The schema
+		// stores category IDs as int64, so the query-string value is
+		// hashed through opportunity.HashCategory at the handler edge.
 		if v := strings.TrimSpace(qs.Get("category")); v != "" {
-			filter = append(filter, map[string]any{"equals": map[string]any{"category": v}})
+			filter = append(filter, map[string]any{
+				"equals": map[string]any{"categories": opportunity.HashCategory(v)},
+			})
 		}
 		if v := strings.TrimSpace(qs.Get("seniority")); v != "" {
 			filter = append(filter, map[string]any{"equals": map[string]any{"seniority": v}})
@@ -49,14 +63,16 @@ func v2SearchHandler(jm *jobsManticore, reg *opportunity.Registry, ct *counters.
 		if v := strings.TrimSpace(qs.Get("kind")); v != "" {
 			filter = append(filter, map[string]any{"equals": map[string]any{"kind": v}})
 		}
+		// `salary_min`/`salary_max` → `amount_min`/`amount_max` (universal
+		// monetary columns in the polymorphic schema).
 		if v := qs.Get("salary_min"); v != "" {
 			if n, err := strconv.Atoi(v); err == nil {
-				filter = append(filter, map[string]any{"range": map[string]any{"salary_min": map[string]any{"gte": n}}})
+				filter = append(filter, map[string]any{"range": map[string]any{"amount_min": map[string]any{"gte": n}}})
 			}
 		}
 		if v := qs.Get("salary_max"); v != "" {
 			if n, err := strconv.Atoi(v); err == nil {
-				filter = append(filter, map[string]any{"range": map[string]any{"salary_max": map[string]any{"lte": n}}})
+				filter = append(filter, map[string]any{"range": map[string]any{"amount_max": map[string]any{"lte": n}}})
 			}
 		}
 
@@ -70,10 +86,12 @@ func v2SearchHandler(jm *jobsManticore, reg *opportunity.Registry, ct *counters.
 		sort := qs.Get("sort")
 		var sortSpec []any
 		switch sort {
-		case "recent":
+		case "recent", "quality":
+			// "quality" is a legacy sort key — the polymorphic schema
+			// has no quality_score column, so we fall back to recency.
+			// Both keys produce the same order to keep older clients
+			// working without surfacing the schema change in API contract.
 			sortSpec = []any{map[string]any{"posted_at": "desc"}}
-		case "quality":
-			sortSpec = []any{map[string]any{"quality_score": "desc"}, map[string]any{"posted_at": "desc"}}
 		default:
 			if q == "" {
 				sortSpec = []any{map[string]any{"posted_at": "desc"}}
@@ -84,11 +102,14 @@ func v2SearchHandler(jm *jobsManticore, reg *opportunity.Registry, ct *counters.
 			"index": "idx_opportunities_rt",
 			"query": map[string]any{"bool": boolQ},
 			"limit": limit,
+			// Facet field names must exactly match schema columns —
+			// `category`/`remote_type` from the pre-polymorphic schema
+			// would 400 here, so they map to `categories`/`geo_scope`.
 			"aggs": map[string]any{
 				"kind":            map[string]any{"terms": map[string]any{"field": "kind", "size": 16}},
-				"category":        map[string]any{"terms": map[string]any{"field": "category", "size": 32}},
+				"categories":      map[string]any{"terms": map[string]any{"field": "categories", "size": 32}},
 				"country":         map[string]any{"terms": map[string]any{"field": "country", "size": 200}},
-				"remote_type":     map[string]any{"terms": map[string]any{"field": "remote_type", "size": 8}},
+				"geo_scope":       map[string]any{"terms": map[string]any{"field": "geo_scope", "size": 8}},
 				"employment_type": map[string]any{"terms": map[string]any{"field": "employment_type", "size": 16}},
 				"seniority":       map[string]any{"terms": map[string]any{"field": "seniority", "size": 16}},
 				"field_of_study":  map[string]any{"terms": map[string]any{"field": "field_of_study", "size": 32}},
@@ -104,11 +125,17 @@ func v2SearchHandler(jm *jobsManticore, reg *opportunity.Registry, ct *counters.
 			http.Error(w, `{"error":"search failed: `+err.Error()+`"}`, http.StatusBadGateway)
 			return
 		}
+		// Decode hits with the same shape jobsManticore.search uses —
+		// numeric _id is sibling of _source, not inside it, and the
+		// polymorphic schema's column names map onto the job struct via
+		// decodeHit so consumers receive the populated ID + schema
+		// fields rather than a zero ID.
 		var parsed struct {
 			Hits struct {
 				Total int `json:"total"`
 				Hits  []struct {
-					Source job `json:"_source"`
+					ID     uint64         `json:"_id"`
+					Source map[string]any `json:"_source"`
 				} `json:"hits"`
 			} `json:"hits"`
 			Aggregations map[string]struct {
@@ -124,7 +151,11 @@ func v2SearchHandler(jm *jobsManticore, reg *opportunity.Registry, ct *counters.
 		}
 		hits := make([]job, 0, len(parsed.Hits.Hits))
 		for _, h := range parsed.Hits.Hits {
-			hits = append(hits, h.Source)
+			j, derr := decodeHit(h.ID, h.Source)
+			if derr != nil {
+				continue
+			}
+			hits = append(hits, j)
 		}
 
 		// Decorate each hit with Valkey-backed view + apply counts
@@ -217,11 +248,12 @@ func embedCounters(ctx context.Context, ct *counters.Counters, hits []job) []job
 	if ct == nil || len(hits) == 0 {
 		return out
 	}
+	// Slug-equivalent for the counters store is the numeric id as a
+	// decimal string — the polymorphic schema has no slug column and
+	// counters keys must be stable across reads and writes.
 	slugs := make([]string, 0, len(hits))
 	for _, h := range hits {
-		if h.Slug != "" {
-			slugs = append(slugs, h.Slug)
-		}
+		slugs = append(slugs, strconv.FormatUint(h.ID, 10))
 	}
 	stats, err := ct.GetStatsBatch(ctx, slugs)
 	if err != nil {
@@ -229,7 +261,7 @@ func embedCounters(ctx context.Context, ct *counters.Counters, hits []job) []job
 		return out
 	}
 	for i, h := range hits {
-		s := stats[h.Slug]
+		s := stats[strconv.FormatUint(h.ID, 10)]
 		out[i].Views24h = s.Views24h
 		out[i].Applies24h = s.Applies24h
 	}
@@ -362,10 +394,8 @@ func v2FeedHandler(jm *jobsManticore) http.HandlerFunc {
 		}{Country: country}
 
 		if country != "" {
-			localFilter := []map[string]any{
-				{"equals": map[string]any{"status": "active"}},
-				{"equals": map[string]any{"country": country}},
-			}
+			localFilter := append(activeFilter(),
+				map[string]any{"equals": map[string]any{"country": country}})
 			local, err := jm.searchFiltered(ctx, localFilter, perTier, "posted_at")
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadGateway)
@@ -394,7 +424,7 @@ func v2FeedTierHandler(jm *jobsManticore) http.HandlerFunc {
 		tierName := qs.Get("tier")
 		limit := parseLimit(qs.Get("limit"), 20, 50)
 
-		filter := []map[string]any{{"equals": map[string]any{"status": "active"}}}
+		filter := append([]map[string]any{}, activeFilter()...)
 		if tierName == "local" {
 			country := strings.ToUpper(qs.Get("country"))
 			if country == "" {

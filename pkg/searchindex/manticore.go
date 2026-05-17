@@ -138,25 +138,36 @@ func (c *Client) SQL(ctx context.Context, stmt string) ([]byte, error) {
 	return out, nil
 }
 
+// withCluster adds Manticore's required JSON properties for cluster-
+// qualified DML when c.cluster is set. As of Manticore 25.x the legacy
+// "index": "cluster:table" form is rejected with parse_exception; the
+// supported form is separate "cluster" + "index" properties. Single-
+// node setups (c.cluster=="") omit "cluster" entirely.
+func (c *Client) withCluster(body map[string]any, index string) map[string]any {
+	body["index"] = index
+	if c.cluster != "" {
+		body["cluster"] = c.cluster
+	}
+	return body
+}
+
 // Replace inserts or replaces a document by id. Uses /replace JSON.
 // Manticore treats replace as upsert; providing a stable id makes
 // the operation idempotent.
 func (c *Client) Replace(ctx context.Context, index string, id uint64, doc map[string]any) error {
-	return c.postJSON(ctx, "/replace", map[string]any{
-		"index": c.qualify(index),
-		"id":    id,
-		"doc":   doc,
-	})
+	return c.postJSON(ctx, "/replace", c.withCluster(map[string]any{
+		"id":  id,
+		"doc": doc,
+	}, index))
 }
 
 // Update patches named fields on an existing document. Uses /update.
 // A missing id is a no-op (Manticore returns {updated: 0}).
 func (c *Client) Update(ctx context.Context, index string, id uint64, doc map[string]any) error {
-	return c.postJSON(ctx, "/update", map[string]any{
-		"index": c.qualify(index),
-		"id":    id,
-		"doc":   doc,
-	})
+	return c.postJSON(ctx, "/update", c.withCluster(map[string]any{
+		"id":  id,
+		"doc": doc,
+	}, index))
 }
 
 // DeleteWhere removes every document where `column` equals `value`.
@@ -166,12 +177,11 @@ func (c *Client) Update(ctx context.Context, index string, id uint64, doc map[st
 // https://manual.manticoresearch.com/Data_creation_and_modification/Deletion#JSON
 // and returns {deleted: N} on success; no error is raised when N == 0.
 func (c *Client) DeleteWhere(ctx context.Context, index, column string, value uint64) error {
-	return c.postJSON(ctx, "/delete", map[string]any{
-		"index": c.qualify(index),
+	return c.postJSON(ctx, "/delete", c.withCluster(map[string]any{
 		"query": map[string]any{
 			"equals": map[string]any{column: value},
 		},
-	})
+	}, index))
 }
 
 // Bulk issues a multi-operation request against /bulk. Body must be
