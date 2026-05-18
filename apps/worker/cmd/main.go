@@ -93,16 +93,24 @@ func main() {
 
 	// Typed cache views — both back onto the same "worker" raw cache,
 	// separated by key-prefix functions.
+	// NATS KV keys must match `^[-/_=\.a-zA-Z0-9]+$` — colons are
+	// rejected with "nats: invalid key". Use a dash separator instead
+	// so dedup + cluster namespacing keeps working against the same
+	// JetStream KV bucket without splitting it into two physical
+	// buckets. The colon-prefixed form silently failed every Get/Set
+	// pre-v8.0.30 (worker errored "nats: invalid key" → handler
+	// returned non-nil → NATS redelivered every variant ad infinitum,
+	// the canonical chain stayed stuck no matter how fast llama ran).
 	dedupCache, ok := cache.GetCache[string, string](
 		svc.CacheManager(), "worker",
-		func(k string) string { return "dedup:" + k },
+		func(k string) string { return "dedup-" + k },
 	)
 	if !ok {
 		util.Log(ctx).Fatal("worker: dedup cache wiring failed (GetCache returned nil)")
 	}
 	clusterCache, ok := cache.GetCache[string, kv.ClusterSnapshot](
 		svc.CacheManager(), "worker",
-		func(k string) string { return "cluster:" + k },
+		func(k string) string { return "cluster-" + k },
 	)
 	if !ok {
 		util.Log(ctx).Fatal("worker: cluster cache wiring failed (GetCache returned nil)")
