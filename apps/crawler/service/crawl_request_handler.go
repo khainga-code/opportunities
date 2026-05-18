@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pitabwire/frame"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/stawi-opportunities/opportunities/pkg/archive"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors"
+	"github.com/stawi-opportunities/opportunities/pkg/connectors/httpx"
 	"github.com/stawi-opportunities/opportunities/pkg/content"
 	"github.com/stawi-opportunities/opportunities/pkg/domain"
 	eventsv1 "github.com/stawi-opportunities/opportunities/pkg/events/v1"
@@ -44,6 +46,17 @@ type CrawlRequestDeps struct {
 	Archive    archive.Archive
 	Extractor  *extraction.Extractor // nil → skip AI enrichment
 	Normalizer *normalize.Normalizer // nil → fall back to raw ExternalToVariant (no geocoder)
+	// PageFetcher fetches per-URL HTML so URL-only iterator stubs
+	// (sitemap, universal AI link discovery) can be enriched with
+	// LLM-extracted title/description/issuing_entity BEFORE Verify.
+	// nil → stubs flow through unchanged and are rejected by Verify.
+	PageFetcher *httpx.Client
+	// EnrichConcurrency bounds how many URL-stub fetch+extract calls
+	// run concurrently per page. Defaults to 4. Sized so multiple
+	// crawler pods × concurrent stubs stay below the configured llama
+	// slot budget; higher values overwhelm the inference fleet and
+	// trigger Frame ants-pool exhaustion downstream.
+	EnrichConcurrency int
 	// DiscoverSample is the probability [0..1] that a given iterator
 	// page triggers an additional DiscoverSites call. 0.0 = disabled
 	// (unit-test default). In production, set ~0.05 so roughly one in
@@ -182,7 +195,17 @@ func (h *CrawlRequestHandler) Execute(ctx context.Context, payload any) error {
 	for iter.Next(ctx) {
 		status = iter.HTTPStatus()
 		pageArchiveRef := resolveArchiveRef(ctx, h.deps.Archive, iter.Content())
-		for _, extJob := range iter.Items() {
+		pageItems := iter.Items()
+
+		// Enrich URL-only stubs (sitemap + universal AI link
+		// discovery) by fetching each detail page and running the
+		// LLM extractor in parallel. Mutates pageItems in place.
+		// Connectors that already produce complete records (greenhouse,
+		// themuse, …) skip this step because their Title is non-empty.
+		h.enrichStubs(ctx, pageItems, src)
+
+		for i := range pageItems {
+			extJob := pageItems[i]
 			jobsFound++
 
 			// Apply-URL fallback chain first — normalize and Verify both see the
@@ -466,5 +489,129 @@ func rejectionReason(r opportunity.VerifyResult) string {
 func ensureApplyURL(opp *domain.ExternalOpportunity, fallbackURL string) {
 	if strings.TrimSpace(opp.ApplyURL) == "" && fallbackURL != "" {
 		opp.ApplyURL = fallbackURL
+	}
+}
+
+// enrichStubs fetches per-URL HTML and runs the LLM extractor on
+// any URL-only stub the connector yielded (Title empty but ApplyURL
+// set). This is the second AI hop in the crawl pipeline: the first
+// hop discovers URLs (sitemap-XML or universal.DiscoverLinks); this
+// hop turns each URL into a fully-populated ExternalOpportunity.
+// Mutates items in place.
+//
+// Connectors that already emit complete records (greenhouse, themuse,
+// arbeitnow, …) skip enrichment because their Title is non-empty.
+//
+// Bounded concurrency keeps the llama fleet within its served-slot
+// budget; values above ~8 saturate inference and propagate timeouts
+// into the worker pool downstream.
+func (h *CrawlRequestHandler) enrichStubs(ctx context.Context, items []domain.ExternalOpportunity, src *domain.Source) {
+	if h.deps.Extractor == nil || h.deps.PageFetcher == nil {
+		return
+	}
+
+	stubIdx := make([]int, 0, len(items))
+	for i := range items {
+		if strings.TrimSpace(items[i].Title) == "" && strings.TrimSpace(items[i].ApplyURL) != "" {
+			stubIdx = append(stubIdx, i)
+		}
+	}
+	if len(stubIdx) == 0 {
+		return
+	}
+
+	conc := h.deps.EnrichConcurrency
+	if conc <= 0 {
+		conc = 4
+	}
+	sem := make(chan struct{}, conc)
+	var wg sync.WaitGroup
+
+	for _, i := range stubIdx {
+		sem <- struct{}{}
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			h.enrichOne(ctx, &items[idx], src)
+		}(i)
+	}
+	wg.Wait()
+}
+
+// enrichOne fetches one detail page and merges LLM-extracted fields
+// into the stub. Best-effort — fetch errors, non-200, parse failures,
+// or empty extractions all leave the stub untouched (Verify rejects
+// them with the usual missing-field reasons). Logging stays at debug
+// to avoid flooding the crawler when whole sitemaps go 404.
+func (h *CrawlRequestHandler) enrichOne(ctx context.Context, opp *domain.ExternalOpportunity, src *domain.Source) {
+	raw, status, err := h.deps.PageFetcher.Get(ctx, opp.ApplyURL, nil)
+	if err != nil || status != 200 || len(raw) == 0 {
+		if err != nil {
+			util.Log(ctx).WithError(err).WithField("url", opp.ApplyURL).Debug("enrich: fetch failed")
+		}
+		return
+	}
+
+	body := string(raw)
+	if ext, _ := content.ExtractFromHTML(body); ext != nil && ext.Markdown != "" {
+		body = ext.Markdown
+	}
+
+	extracted, err := h.deps.Extractor.Extract(ctx, body, src.Kinds)
+	if err != nil || extracted == nil {
+		if err != nil {
+			util.Log(ctx).WithError(err).WithField("url", opp.ApplyURL).Debug("enrich: LLM extract failed")
+		}
+		return
+	}
+
+	mergeStubFields(opp, extracted)
+}
+
+// mergeStubFields copies fields from the LLM-extracted record into
+// the stub, preserving stub-supplied identity (ExternalID, ApplyURL,
+// Kind) and only filling empty fields. Attributes merge key-by-key
+// without overwriting connector-set values.
+func mergeStubFields(dst, src *domain.ExternalOpportunity) {
+	if dst.Title == "" {
+		dst.Title = src.Title
+	}
+	if dst.Description == "" {
+		dst.Description = src.Description
+	}
+	if dst.IssuingEntity == "" {
+		dst.IssuingEntity = src.IssuingEntity
+	}
+	if dst.LocationText == "" {
+		dst.LocationText = src.LocationText
+	}
+	if dst.AnchorLocation == nil && src.AnchorLocation != nil {
+		dst.AnchorLocation = src.AnchorLocation
+	}
+	if dst.Kind == "" {
+		dst.Kind = src.Kind
+	}
+	if dst.Deadline == nil {
+		dst.Deadline = src.Deadline
+	}
+	if dst.Currency == "" {
+		dst.Currency = src.Currency
+	}
+	if dst.AmountMin == 0 {
+		dst.AmountMin = src.AmountMin
+	}
+	if dst.AmountMax == 0 {
+		dst.AmountMax = src.AmountMax
+	}
+	if len(src.Attributes) > 0 {
+		if dst.Attributes == nil {
+			dst.Attributes = map[string]any{}
+		}
+		for k, v := range src.Attributes {
+			if _, has := dst.Attributes[k]; !has {
+				dst.Attributes[k] = v
+			}
+		}
 	}
 }

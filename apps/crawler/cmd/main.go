@@ -277,14 +277,16 @@ func main() {
 	normalizer := normalize.New(geocoder)
 
 	crawlReqH := service.NewCrawlRequestHandler(service.CrawlRequestDeps{
-		Svc:            svc,
-		Sources:        sourceRepo,
-		Registry:       registry,
-		Kinds:          reg,
-		Archive:        arch,
-		Extractor:      extractor,
-		Normalizer:     normalizer,
-		DiscoverSample: 0.05, // roughly 1-in-20 pages get DiscoverSites
+		Svc:               svc,
+		Sources:           sourceRepo,
+		Registry:          registry,
+		Kinds:             reg,
+		Archive:           arch,
+		Extractor:         extractor,
+		Normalizer:        normalizer,
+		PageFetcher:       httpClient,
+		EnrichConcurrency: 4,
+		DiscoverSample:    0.05, // roughly 1-in-20 pages get DiscoverSites
 	})
 	pageDoneH := service.NewPageCompletedHandler(sourceRepo)
 	srcDiscH := service.NewSourceDiscoveredHandler(sourceRepo, reg)
