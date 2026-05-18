@@ -119,7 +119,7 @@ func main() {
 		"", // no Pages deploy hook for the worker
 	)
 
-	service := workersvc.NewService(svc, ex, publisher, reg, dedupCache, clusterCache, cfg.TranslationLangs)
+	service := workersvc.NewService(svc, ex, publisher, reg, dedupCache, clusterCache, cfg.TranslationLangs, cfg.ValidationSkipLLM)
 
 	// S3-compatible client for the R2 content bucket (used by kv/rebuild
 	// to list <kind>/*.json slug files). Same R2 account credentials —

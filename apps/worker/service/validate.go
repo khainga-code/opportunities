@@ -48,15 +48,34 @@ type validationResult struct {
 // with confidence=0.5. On LLM *rate-limit / 429* (not an "error" per
 // se, an overload), it returns a non-nil error so Frame redelivers
 // later.
+//
+// When skipLLM is true the handler short-circuits the LLM call and
+// emits VariantValidated@1.0 for every record. Used to keep the
+// canonical chain moving when the shared inference fleet is saturated
+// elsewhere (crawler enrichStubs, embed/translate). Connector-
+// supplied fields remain the authoritative data; only the QC pass
+// is skipped.
 type ValidateHandler struct {
 	svc           *frame.Service
 	extractor     *extraction.Extractor
 	minConfidence float64
+	skipLLM       bool
 }
 
 // NewValidateHandler uses the package-level ValidationMinConfidence.
 func NewValidateHandler(svc *frame.Service, ex *extraction.Extractor) *ValidateHandler {
 	return &ValidateHandler{svc: svc, extractor: ex, minConfidence: ValidationMinConfidence}
+}
+
+// NewValidateHandlerWithSkip returns a handler that skips the LLM
+// validation pass entirely. Every variant emits VariantValidated@1.0.
+func NewValidateHandlerWithSkip(svc *frame.Service, ex *extraction.Extractor, skipLLM bool) *ValidateHandler {
+	return &ValidateHandler{
+		svc:           svc,
+		extractor:     ex,
+		minConfidence: ValidationMinConfidence,
+		skipLLM:       skipLLM,
+	}
 }
 
 // Name ...
@@ -85,6 +104,13 @@ func (h *ValidateHandler) Execute(ctx context.Context, payload any) error {
 		return err
 	}
 	n := env.Payload
+
+	// Skip-LLM bypass — pass through every variant with confidence=1.0.
+	// Used when the shared inference fleet is saturated and validate is
+	// stalling the canonical chain.
+	if h.skipLLM {
+		return h.emitValidated(ctx, n, 1.0, "validation skipped (VALIDATION_SKIP_LLM)", "")
+	}
 
 	// If no extractor is configured, accept without AI — same semantics
 	// as the legacy handler's "LLM unavailable" branch.

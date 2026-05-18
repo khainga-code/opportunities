@@ -62,6 +62,21 @@ type Config struct {
 	// Validation LLM request timeout.
 	ValidationTimeout time.Duration `env:"VALIDATION_TIMEOUT" envDefault:"30s"`
 
+	// ValidationSkipLLM short-circuits the validation LLM call and
+	// emits VariantValidated@1.0 confidence for every record. Use when
+	// the shared llama fleet is saturated by other consumers (crawler
+	// enrichStubs, embed/translate) and validate is bottlenecking
+	// the canonical chain: variants.ingested → normalize → validate
+	// (LLM) → dedup → canonical → publish. The canonical chain
+	// produces the canonicals.upserted events that the materializer
+	// turns into Manticore rows — so a stalled validate keeps the
+	// /jobs page empty even when the rest of the pipeline is healthy.
+	// Connector-supplied fields are already the authoritative data
+	// path for greenhouse/themuse/arbeitnow/etc., so skipping the
+	// LLM QC step is a clean way to trade quality scoring for
+	// throughput.
+	ValidationSkipLLM bool `env:"VALIDATION_SKIP_LLM" envDefault:"false"`
+
 	// OpportunityKindsDir is the directory holding the opportunity-kinds YAML
 	// registry. Mounted as a ConfigMap in production at this path.
 	OpportunityKindsDir string `env:"OPPORTUNITY_KINDS_DIR" envDefault:"/etc/opportunity-kinds"`
