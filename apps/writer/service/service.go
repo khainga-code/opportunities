@@ -42,40 +42,27 @@ func NewService(
 	}
 }
 
-// writerIgnoreEvents lists topics that flow through svc.opportunities.events
-// but the writer does NOT persist to Iceberg (no Arrow schema, no Parquet
-// builder). Without explicit NoopHandlers, Frame returns "event not found
-// in registry" for every delivery — the message is never acked and NATS
-// re-delivers it after consumer_ack_wait. In production this turned the
-// writer into a hot loop chewing CPU on the same retry-storm for hours,
-// blocking the rest of the stream behind a 500-deep ack_pending window.
-//
-// Add to this list when a new in-pipeline event flows through the events
-// stream but is not in writer/AllTopics() (i.e. not bound for Iceberg).
-var writerIgnoreEvents = []string{
-	eventsv1.TopicCrawlRequests,
-	eventsv1.TopicSourcesStopped,
-	eventsv1.TopicCandidateCVStaleNudge,
-	eventsv1.TopicCandidateWeeklyJobsDigest,
-}
-
 // RegisterSubscriptions wires one WriterHandler per topic into the
 // Frame events manager. Called during startup, before svc.Run. Each
 // handler is the Frame-dispatched entry point for that topic's
-// messages. Topics in writerIgnoreEvents get a NoopHandler so the
-// shared events stream doesn't wedge on event types the writer is
-// not responsible for persisting.
+// messages.
+//
+// The writer subscribes to the catch-all svc.opportunities.events.>
+// NATS subject and only persists topics in eventsv1.AllTopics(). Loose
+// mode (Frame v1.97.3+) tells the events.Manager to ack-and-skip any
+// other topic instead of returning ErrUnregisteredEvent — that removes
+// the per-topic NoopHandler block that used to live here without
+// reintroducing the "permanent NATS retry storm" wedge from the bare
+// strict-mode catch-all.
 func (s *Service) RegisterSubscriptions(topics []string) error {
 	mgr := s.svc.EventsManager()
 	if mgr == nil {
 		return fmt.Errorf("writer: events manager unavailable — check NATS configuration")
 	}
+	mgr.SetStrict(false)
 	for _, t := range topics {
 		h := NewWriterHandler(t, s.buffer)
 		mgr.Add(h)
-	}
-	for _, t := range writerIgnoreEvents {
-		mgr.Add(&eventsv1.NoopHandler{Topic: t})
 	}
 	return nil
 }

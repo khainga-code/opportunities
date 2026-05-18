@@ -160,6 +160,15 @@ func main() {
 		frame.WithHTTPHandler(adminMux),
 	)
 
+	// The worker consumes svc.opportunities.events.> (catch-all) but
+	// only acts on the variants/canonical chain. Loose mode lets Frame
+	// ack-and-skip every other topic on the shared stream — replaces
+	// the per-topic NoopHandler block that used to live in
+	// service.EventHandlers().
+	if mgr := svc.EventsManager(); mgr != nil {
+		mgr.SetStrict(false)
+	}
+
 	if err := svc.Run(ctx, ""); err != nil {
 		util.Log(ctx).WithError(err).Fatal("worker: frame.Run failed")
 	}

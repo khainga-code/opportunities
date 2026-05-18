@@ -53,40 +53,30 @@ func (s *Service) RegisterSubscriptions() error {
 	if mgr == nil {
 		return fmt.Errorf("materializer: events manager unavailable")
 	}
+	// The materializer subscribes to the catch-all svc.opportunities.events.>
+	// stream subject (same stream the worker + writer drain). Loose-mode
+	// asks Frame to ack-and-skip any event whose Name() isn't on the
+	// list below, instead of nack-storming on every sibling-consumer
+	// event. The opt-in replaces the per-topic NoopHandler block that
+	// used to live here — adding a new ignore-able topic now means
+	// doing nothing, and adding a new INTERESTING topic means writing a
+	// real handler and registering it here (the failure mode if you
+	// forget is "ack-and-skip", which is debuggable; the old failure
+	// mode if you forgot was "permanent NATS retry storm" which wedged
+	// the consumer behind max_ack_pending).
+	mgr.SetStrict(false)
 	mgr.Add(NewCanonicalUpsertHandler(s))
 	mgr.Add(NewCanonicalExpiredHandler(s))
 	mgr.Add(NewTranslationHandler(s))
 	mgr.Add(NewEmbeddingHandler(s))
 	mgr.Add(NewAutoFlaggedHandler(s))
 	mgr.Add(NewSourceStoppedHandler(s))
-	for _, t := range materializerIgnoreEvents {
-		mgr.Add(&eventsv1.NoopHandler{Topic: t})
-	}
 	return nil
 }
 
-// Events that the materializer does NOT consume but that flow through
-// the same NATS subject namespace. Adding silent-ack handlers stops
-// Frame from logging "event not found in registry" on every delivery.
-var materializerIgnoreEvents = []string{
-	eventsv1.TopicVariantsIngested,
-	eventsv1.TopicVariantsNormalized,
-	eventsv1.TopicVariantsValidated,
-	eventsv1.TopicVariantsFlagged,
-	eventsv1.TopicVariantsClustered,
-	eventsv1.TopicVariantsRejected,
-	eventsv1.TopicCrawlRequests,
-	eventsv1.TopicCrawlPageCompleted,
-	eventsv1.TopicSourcesDiscovered,
-	eventsv1.TopicPublished,
-	eventsv1.TopicCVUploaded,
-	eventsv1.TopicCVExtracted,
-	eventsv1.TopicCVImproved,
-	eventsv1.TopicCandidateEmbedding,
-	eventsv1.TopicCandidatePreferencesUpdated,
-	eventsv1.TopicCandidateMatchesReady,
-	eventsv1.TopicCandidateCVStaleNudge,
-}
+// (materializerIgnoreEvents removed — Frame v1.97.3 loose-mode handles
+// the catch-all-stream pattern at the framework layer. See
+// EventsManager().SetStrict(false) in RegisterSubscriptions above.)
 
 // ---------------------------------------------------------------------------
 // SourceStoppedHandler — TopicSourcesStopped

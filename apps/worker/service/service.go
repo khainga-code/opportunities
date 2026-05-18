@@ -6,7 +6,6 @@ import (
 	"github.com/pitabwire/frame/events"
 	"github.com/pitabwire/frame/queue"
 
-	eventsv1 "github.com/stawi-opportunities/opportunities/pkg/events/v1"
 	"github.com/stawi-opportunities/opportunities/pkg/extraction"
 	"github.com/stawi-opportunities/opportunities/pkg/kv"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
@@ -62,54 +61,24 @@ func NewService(
 	}
 }
 
-// workerIgnoreEvents lists topics that flow through the shared
-// svc.opportunities.events stream but the worker does NOT process —
-// terminal/audit states, materializer-bound events, CV/candidate
-// events handled by apps/matching, and the worker's own outputs.
-// Without explicit NoopHandlers, every delivery returns "event not
-// found in registry" and NATS never acks, locking the 500-deep
-// max_ack_pending window in a redelivery storm.
-var workerIgnoreEvents = []string{
-	eventsv1.TopicCrawlRequests,
-	eventsv1.TopicCrawlPageCompleted,
-	eventsv1.TopicSourcesDiscovered,
-	eventsv1.TopicSourcesStopped,
-	eventsv1.TopicVariantsFlagged,
-	eventsv1.TopicVariantsRejected,
-	eventsv1.TopicCanonicalsExpired,
-	eventsv1.TopicEmbeddings,
-	eventsv1.TopicTranslations,
-	eventsv1.TopicPublished,
-	eventsv1.TopicOpportunityAutoFlagged,
-	eventsv1.TopicCVUploaded,
-	eventsv1.TopicCVExtracted,
-	eventsv1.TopicCVImproved,
-	eventsv1.TopicCandidateEmbedding,
-	eventsv1.TopicCandidatePreferencesUpdated,
-	eventsv1.TopicCandidateMatchesReady,
-	eventsv1.TopicCandidateCVStaleNudge,
-	eventsv1.TopicCandidateWeeklyJobsDigest,
-}
-
 // EventHandlers returns the in-process Frame Event handlers.
 //
 // These are fast, internal-only stages. External-API stages
 // (embed/translate) are returned by QueueWorkers instead.
-// NoopHandlers ack-and-drop every workerIgnoreEvents topic so the
-// shared events stream stays drained when the worker's stream
-// subscription receives event types it isn't responsible for.
+//
+// The worker subscribes to the catch-all svc.opportunities.events.>
+// stream subject. Frame v1.97.3 loose-mode (configured via the
+// main.go wiring: svc.EventsManager().SetStrict(false)) acks-and-skips
+// any event whose Name() isn't a registered handler below, so the
+// previous per-topic NoopHandler block is no longer needed.
 func (s *Service) EventHandlers() []events.EventI {
-	out := []events.EventI{
+	return []events.EventI{
 		NewNormalizeHandler(s.svc),
 		NewValidateHandler(s.svc, s.extractor),
 		NewDedupHandlerWithCluster(s.svc, s.dedupCache, s.clusterCache),
 		NewCanonicalHandler(s.svc, s.clusterCache),
 		NewPublishHandler(s.svc, s.publisher, s.registry),
 	}
-	for _, t := range workerIgnoreEvents {
-		out = append(out, &eventsv1.NoopHandler{Topic: t})
-	}
-	return out
 }
 
 // EmbedWorker returns the queue subscriber for SubjectWorkerEmbed.
