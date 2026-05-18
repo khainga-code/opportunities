@@ -77,6 +77,16 @@ type Config struct {
 	// throughput.
 	ValidationSkipLLM bool `env:"VALIDATION_SKIP_LLM" envDefault:"false"`
 
+	// DedupSkipCache bypasses the JetStream-KV dedup lookup and uses
+	// HardKey directly as the cluster_id. Use when KV operations are
+	// timing out under load (5s per call × four calls per dedup =
+	// ~20s wall-time per variant; with max_ack_pending=32 throughput
+	// caps near 1.6 msgs/sec — Manticore stays effectively empty).
+	// Trade-off: lose dedup so a job posted at two sources or seen on
+	// two crawls produces two clusters. Acceptable for getting jobs
+	// onto the website while we diagnose the NATS-KV latency.
+	DedupSkipCache bool `env:"DEDUP_SKIP_CACHE" envDefault:"false"`
+
 	// OpportunityKindsDir is the directory holding the opportunity-kinds YAML
 	// registry. Mounted as a ConfigMap in production at this path.
 	OpportunityKindsDir string `env:"OPPORTUNITY_KINDS_DIR" envDefault:"/etc/opportunity-kinds"`

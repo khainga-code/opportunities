@@ -25,10 +25,17 @@ import (
 // fields without re-reading the validated payload. The merge stage
 // then emits CanonicalUpsertedV1.Attributes for the materializer's
 // sparseColsForKind to project per-kind facets.
+//
+// When skipCache is true the handler bypasses both KV lookups and
+// derives cluster_id deterministically from HardKey. Used as a
+// throughput escape hatch when JetStream-KV is slow enough to stall
+// the canonical chain (each KV op blocks ~5s on timeout). Loses
+// cross-source dedup until flipped back.
 type DedupHandler struct {
 	svc          *frame.Service
 	cache        cache.Cache[string, string]
 	clusterCache cache.Cache[string, kv.ClusterSnapshot]
+	skipCache    bool
 }
 
 // NewDedupHandler binds the handler. clusterCache may be nil in
@@ -44,6 +51,11 @@ func NewDedupHandler(svc *frame.Service, c cache.Cache[string, string]) *DedupHa
 // canonical merge.
 func NewDedupHandlerWithCluster(svc *frame.Service, c cache.Cache[string, string], cs cache.Cache[string, kv.ClusterSnapshot]) *DedupHandler {
 	return &DedupHandler{svc: svc, cache: c, clusterCache: cs}
+}
+
+// NewDedupHandlerWithSkip returns a handler with cache bypass toggled.
+func NewDedupHandlerWithSkip(svc *frame.Service, c cache.Cache[string, string], cs cache.Cache[string, kv.ClusterSnapshot], skipCache bool) *DedupHandler {
+	return &DedupHandler{svc: svc, cache: c, clusterCache: cs, skipCache: skipCache}
 }
 
 // Name ...
@@ -72,6 +84,25 @@ func (h *DedupHandler) Execute(ctx context.Context, payload any) error {
 		return err
 	}
 	val := env.Payload
+
+	// skipCache short-circuits both KV lookups and uses HardKey as
+	// the cluster_id. Used when KV operations are timing out under
+	// load and the chain needs to drain. Cross-source dedup is lost
+	// (the same job at two sources clusters separately) until the
+	// flag flips back.
+	if h.skipCache {
+		out := eventsv1.VariantClusteredV1{
+			VariantID:     val.VariantID,
+			OpportunityID: val.HardKey,
+			HardKey:       val.HardKey,
+			Kind:          val.Kind,
+			IsNew:         true,
+			ClusteredAt:   time.Now().UTC(),
+			Attributes:    val.Attributes,
+		}
+		outEnv := eventsv1.NewEnvelope(eventsv1.TopicVariantsClustered, out)
+		return h.svc.EventsManager().Emit(ctx, eventsv1.TopicVariantsClustered, outEnv)
+	}
 
 	// Cache calls are best-effort: a degraded JetStream KV (timeout,
 	// missing bucket, transient) used to nack the entire variant,

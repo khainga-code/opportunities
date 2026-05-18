@@ -39,6 +39,7 @@ type Service struct {
 
 	translationLangs  []string
 	validationSkipLLM bool
+	dedupSkipCache    bool
 }
 
 // NewService ...
@@ -51,6 +52,7 @@ func NewService(
 	clusterCache cache.Cache[string, kv.ClusterSnapshot],
 	translationLangs []string,
 	validationSkipLLM bool,
+	dedupSkipCache bool,
 ) *Service {
 	return &Service{
 		svc:               svc,
@@ -61,6 +63,7 @@ func NewService(
 		clusterCache:      clusterCache,
 		translationLangs:  translationLangs,
 		validationSkipLLM: validationSkipLLM,
+		dedupSkipCache:    dedupSkipCache,
 	}
 }
 
@@ -78,7 +81,7 @@ func (s *Service) EventHandlers() []events.EventI {
 	return []events.EventI{
 		NewNormalizeHandler(s.svc),
 		NewValidateHandlerWithSkip(s.svc, s.extractor, s.validationSkipLLM),
-		NewDedupHandlerWithCluster(s.svc, s.dedupCache, s.clusterCache),
+		NewDedupHandlerWithSkip(s.svc, s.dedupCache, s.clusterCache, s.dedupSkipCache),
 		NewCanonicalHandler(s.svc, s.clusterCache),
 		NewPublishHandler(s.svc, s.publisher, s.registry),
 	}

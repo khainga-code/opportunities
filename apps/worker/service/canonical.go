@@ -65,7 +65,10 @@ func (h *CanonicalHandler) Execute(ctx context.Context, payload any) error {
 
 	prev, _, err := h.cache.Get(ctx, in.OpportunityID)
 	if err != nil {
-		return err
+		util.Log(ctx).WithError(err).
+			WithField("cluster_id", in.OpportunityID).
+			Warn("canonical: cache.Get failed; starting from empty snapshot")
+		prev = kv.ClusterSnapshot{}
 	}
 
 	now := time.Now().UTC()
@@ -132,7 +135,9 @@ func (h *CanonicalHandler) Execute(ctx context.Context, payload any) error {
 	}
 
 	if err := h.cache.Set(ctx, merged.ClusterID, merged, 0*time.Second); err != nil {
-		return err
+		util.Log(ctx).WithError(err).
+			WithField("cluster_id", merged.ClusterID).
+			Warn("canonical: cache.Set failed; merge state not persisted")
 	}
 
 	out := eventsv1.CanonicalUpsertedV1{
