@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pitabwire/frame"
+	"github.com/pitabwire/util"
 
 	eventsv1 "github.com/stawi-opportunities/opportunities/pkg/events/v1"
 )
@@ -54,15 +55,28 @@ func (h *NormalizeHandler) Validate(_ context.Context, payload any) error {
 
 // Execute parses the envelope, normalizes, and emits.
 func (h *NormalizeHandler) Execute(ctx context.Context, payload any) error {
+	t0 := time.Now()
 	raw := payload.(*json.RawMessage)
 	var env eventsv1.Envelope[eventsv1.VariantIngestedV1]
 	if err := json.Unmarshal(*raw, &env); err != nil {
+		util.Log(ctx).WithError(err).Warn("normalize: unmarshal failed")
 		return err
 	}
-
+	t1 := time.Now()
 	out := normalize(env.Payload)
+	t2 := time.Now()
 	outEnv := eventsv1.NewEnvelope(eventsv1.TopicVariantsNormalized, out)
-	return h.svc.EventsManager().Emit(ctx, eventsv1.TopicVariantsNormalized, outEnv)
+	err := h.svc.EventsManager().Emit(ctx, eventsv1.TopicVariantsNormalized, outEnv)
+	t3 := time.Now()
+	util.Log(ctx).
+		WithField("variant_id", env.Payload.VariantID).
+		WithField("payload_bytes", len(*raw)).
+		WithField("unmarshal_ms", t1.Sub(t0).Milliseconds()).
+		WithField("normalize_ms", t2.Sub(t1).Milliseconds()).
+		WithField("emit_ms", t3.Sub(t2).Milliseconds()).
+		WithField("total_ms", t3.Sub(t0).Milliseconds()).
+		Info("normalize: done")
+	return err
 }
 
 // normalize applies deterministic field cleanup against the universal
