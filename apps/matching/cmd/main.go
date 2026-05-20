@@ -146,22 +146,22 @@ func main() {
 
 	// --- Production adapters (Tasks 13-17) ---
 	candidateRepo := repository.NewCandidateRepository(dbFn)
-	search, err := httpv1.NewManticoreSearch(cfg.ManticoreURL, cfg.ManticoreCluster, "idx_opportunities_rt")
-	if err != nil {
-		log.WithError(err).Fatal("candidates: Manticore adapter init failed")
-	}
+	// Post-Manticore: the search adapter speaks pgvector + JSONB
+	// filters directly against the `opportunities` table over the
+	// existing read-only pool. No new dialer, no extra service.
+	search := httpv1.NewPostgresSearch(dbFn)
 	matchSvc := httpv1.NewMatchService(candStore, search, 20)
 	candidateLister := adminv1.NewRepoCandidateLister(candidateRepo, 1000)
 	matchRunner := adminv1.NewServiceMatchRunner(svc, matchSvc)
 	staleReader := candidatestore.NewStaleReader(cat)
 	staleLister := adminv1.NewR2StaleLister(staleReader, 60*24*time.Hour, 500)
 	// Weekly jobs digest collaborators — non-personalised email for
-	// candidates who completed signup but not checkout. Same Manticore
-	// client backs the existing match service; we reuse its handle
+	// candidates who completed signup but not checkout. The same
+	// pgsearch.Search backs the match service; we reuse its handle
 	// rather than redial.
 	unpaidLister := adminv1.NewRepoUnpaidCandidateLister(candidateRepo, 5000)
-	newJobsLister := adminv1.NewManticoreJobsLister(search.Client())
-	weeklyStats := adminv1.NewManticoreWeeklyStatsLister(search.Client())
+	newJobsLister := adminv1.NewPostgresJobsLister(search.Search())
+	weeklyStats := adminv1.NewPostgresWeeklyStatsLister(search.Search())
 
 	// --- Subscription handlers ---
 	// CV-pipeline handlers (cv-extract / cv-improve / cv-embed) are
