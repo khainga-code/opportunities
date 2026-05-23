@@ -89,7 +89,7 @@ func setupExtensionEnv(t *testing.T) (*http.ServeMux, *sql.DB, context.Context) 
 		Weights:          matching.DefaultWeights(),
 		Debouncer:        matching.NewMemoryDebouncer(),
 		IdempotencyStore: applications.NewIdempotencyStore(db, time.Hour),
-	})
+	}, nil)
 	return mux, db, ctx
 }
 

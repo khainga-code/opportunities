@@ -14,6 +14,7 @@ import (
 	"github.com/pitabwire/frame"
 	fconfig "github.com/pitabwire/frame/config"
 	"github.com/pitabwire/frame/datastore"
+	"github.com/pitabwire/frame/security"
 	"github.com/pitabwire/util"
 	"github.com/rs/xid"
 
@@ -321,6 +322,24 @@ func main() {
 	}
 
 	// --- HTTP mux ---
+	// Resolve Frame's JWT authenticator from the SecurityManager. With
+	// the matching HelmRelease's oauth2.enabled=true block,
+	// frame.NewServiceWithContext wires this from the OIDC env vars
+	// (OAUTH2_SERVICE_URI, OAUTH2_JWT_VERIFY_AUDIENCE, ...). If the
+	// service is started without OIDC configured (local dev, tests),
+	// authenticator stays nil and NewCandidateAuth degrades to
+	// header-only — same behaviour the existing unit tests rely on.
+	var authenticator security.Authenticator
+	if secMgr := svc.SecurityManager(); secMgr != nil {
+		authenticator = secMgr.GetAuthenticator(ctx)
+	}
+	if authenticator != nil {
+		log.Info("matching: /me/* routes protected with JWT authentication")
+	} else {
+		log.Warn("matching: no JWT authenticator configured — /me/* routes accept X-Candidate-ID header only")
+	}
+	authMW := httpmw.NewCandidateAuth(authenticator)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -358,7 +377,7 @@ func main() {
 			log.WithError(dbErr).Warn("me/subscription: sql.DB unwrap failed; counts will be zero")
 		}
 	}
-	mux.Handle("GET /me/subscription", httpmw.CandidateAuth(
+	mux.Handle("GET /me/subscription", authMW(
 		httpv1.SubscriptionHandler(httpv1.SubscriptionDeps{
 			Candidates: candidateRepo,
 			Matches:    meSubMatches,
@@ -367,9 +386,10 @@ func main() {
 
 	// /me/onboarding — resumable wizard. Same handler serves GET +
 	// PUT; the underlying repo type implements both interfaces.
-	// CandidateAuth wraps the registration; the wrapper populates
-	// the candidate ID into the request context.
-	onboardingHandler := httpmw.CandidateAuth(httpv1.OnboardingHandler(httpv1.OnboardingDeps{
+	// authMW wraps the registration with JWT verification + subject
+	// extraction; the inner middleware populates the candidate ID
+	// into the request context.
+	onboardingHandler := authMW(httpv1.OnboardingHandler(httpv1.OnboardingDeps{
 		Drafts: candidateRepo,
 	}))
 	mux.Handle("GET /me/onboarding", onboardingHandler)
@@ -381,7 +401,7 @@ func main() {
 	// here; service-payment flips it to "active" via webhook when
 	// the checkout the wizard kicked off completes.
 	onboardStore := &candidateOnboardAdapter{repo: candidateRepo}
-	mux.Handle("POST /candidates/onboard", httpmw.CandidateAuth(
+	mux.Handle("POST /candidates/onboard", authMW(
 		httpv1.CandidatesOnboardHandler(httpv1.CandidatesOnboardDeps{Store: onboardStore}),
 	))
 
@@ -395,7 +415,7 @@ func main() {
 			log.WithError(dbErr).Warn("me/saved-jobs: sql.DB unwrap failed; star/unstar will 502")
 		}
 	}
-	savedJobsHandler := httpmw.CandidateAuth(httpv1.SavedJobsHandler(httpv1.SavedJobsDeps{
+	savedJobsHandler := authMW(httpv1.SavedJobsHandler(httpv1.SavedJobsDeps{
 		Store: savedJobsStore,
 	}))
 	mux.Handle("POST /me/saved-jobs", savedJobsHandler)
@@ -409,7 +429,7 @@ func main() {
 	if gdb := dbFn(ctx, true); gdb != nil {
 		if sqlDB, dbErr := gdb.DB(); dbErr == nil {
 			oppFeedStore := matching.NewStore(sqlDB)
-			mux.Handle("GET /me/opportunities", httpmw.CandidateAuth(
+			mux.Handle("GET /me/opportunities", authMW(
 				httpv1.OpportunitiesHandler(httpv1.OpportunitiesDeps{Store: oppFeedStore}),
 			))
 		} else {
@@ -431,7 +451,7 @@ func main() {
 			log.WithError(dbErr).Warn("me/applications: sql.DB unwrap failed; apply will 502")
 		}
 	}
-	mux.Handle("POST /me/applications", httpmw.CandidateAuth(
+	mux.Handle("POST /me/applications", authMW(
 		httpv1.ApplicationsHandler(httpv1.ApplicationsDeps{Starter: appStarter}),
 	))
 
@@ -474,7 +494,7 @@ func main() {
 			Debouncer:        deb,
 			IdempotencyStore: applications.NewIdempotencyStore(sqlDB, 24*time.Hour),
 		}
-		meV1.Mount(mux, extDeps)
+		meV1.Mount(mux, extDeps, authMW)
 		log.Info("matching: /api/me/* routes enabled")
 	}
 
