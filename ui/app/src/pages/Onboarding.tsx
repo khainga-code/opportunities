@@ -27,9 +27,9 @@ const Step1Schema = z.object({
     .refine((v) => v instanceof File)
     .refine((v) => !(v instanceof File) || v.size <= 10 * 1024 * 1024)
     .refine((v) => !(v instanceof File) || /\.(pdf|docx?|rtf|txt)$/i.test(v.name)),
-  targetJobTitle: z.string().min(2),
-  experienceLevel: z.enum(['entry', 'junior', 'mid', 'senior', 'lead', 'executive']),
-  jobSearchStatus: z.enum(['actively_looking', 'open_to_offers', 'casually_browsing']),
+  targetJobTitle: z.string().optional(),
+  experienceLevel: z.enum(['entry', 'junior', 'mid', 'senior', 'lead', 'executive']).optional(),
+  jobSearchStatus: z.enum(['actively_looking', 'open_to_offers', 'casually_browsing']).optional(),
   extraInfo: z.string().optional(),
   salaryAmount: z.coerce.number().nonnegative().optional(),
   salaryCurrency: z.string().optional(),
@@ -204,9 +204,9 @@ export default function Onboarding() {
     setSubmitError(null);
     try {
       await submitOnboarding({
-        target_job_title: data.targetJobTitle,
-        experience_level: data.experienceLevel,
-        job_search_status: data.jobSearchStatus,
+        target_job_title: data.targetJobTitle ?? '',
+        experience_level: data.experienceLevel ?? 'mid',
+        job_search_status: data.jobSearchStatus ?? 'actively_looking',
         salary_min: data.salaryAmount ?? undefined,
         salary_max: data.salaryAmount ?? undefined,
         currency: data.salaryCurrency ?? 'USD',
