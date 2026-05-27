@@ -14,8 +14,10 @@ import (
 	securityhttp "github.com/pitabwire/frame/security/interceptors/httptor"
 	"github.com/pitabwire/util"
 
+	"github.com/antinvestor/service-trustage/client/workflows"
 	crawlerconfig "github.com/stawi-opportunities/opportunities/apps/crawler/config"
 	"github.com/stawi-opportunities/opportunities/apps/crawler/service"
+	"github.com/stawi-opportunities/opportunities/pkg/services"
 	"github.com/stawi-opportunities/opportunities/pkg/analytics"
 	"github.com/stawi-opportunities/opportunities/pkg/archive"
 	"github.com/stawi-opportunities/opportunities/pkg/backpressure"
@@ -92,6 +94,16 @@ func main() {
 		// putting it here keeps the finalize step in one place.
 		if err := repository.FinalizeSchema(migrationDB); err != nil {
 			log.WithError(err).Fatal("finalize schema failed")
+		}
+		// Sync Trustage workflow definitions from the mounted ConfigMap.
+		if cfg.TrustageURL != "" && cfg.TrustageWorkflowsDir != "" {
+			trustageCli, cliErr := services.NewTrustageWorkflowClient(ctx, &cfg, cfg.TrustageURL)
+			if cliErr != nil {
+				log.WithError(cliErr).Fatal("trustage workflow client init failed")
+			}
+			if syncErr := workflows.SyncFromDir(ctx, trustageCli, cfg.TrustageWorkflowsDir); syncErr != nil {
+				log.WithError(syncErr).Fatal("trustage workflow sync failed")
+			}
 		}
 		log.Info("migration complete")
 		return
