@@ -240,6 +240,77 @@ export interface Strings {
   'dash.payPerMonth': string;
   'dash.perMonth': string;
 
+  // ---- Onboarding ----
+  'onboard.step': string;
+  'onboard.of': string;
+  'onboard.aboutYou': string;
+  'onboard.yourPreferences': string;
+  'onboard.choosePlan': string;
+  'onboard.aboutYouHint': string;
+  'onboard.preferencesHint': string;
+  'onboard.choosePlanHint': string;
+  'onboard.targetJobTitle': string;
+  'onboard.targetJobTitlePlaceholder': string;
+  'onboard.experienceLevel': string;
+  'onboard.entry': string;
+  'onboard.junior': string;
+  'onboard.mid': string;
+  'onboard.senior': string;
+  'onboard.lead': string;
+  'onboard.executive': string;
+  'onboard.jobSearchStatus': string;
+  'onboard.activelyLooking': string;
+  'onboard.openToOffers': string;
+  'onboard.casuallyBrowsing': string;
+  'onboard.targetSalary': string;
+  'onboard.preferNotToSay': string;
+  'onboard.uploadCV': string;
+  'onboard.chooseFile': string;
+  'onboard.cvFormats': string;
+  'onboard.readyToUpload': string;
+  'onboard.remove': string;
+  'onboard.cvPrivacy': string;
+  'onboard.atsReport': string;
+  'onboard.regions': string;
+  'onboard.anywhere': string;
+  'onboard.africa': string;
+  'onboard.europe': string;
+  'onboard.northAmerica': string;
+  'onboard.southAmerica': string;
+  'onboard.asia': string;
+  'onboard.oceania': string;
+  'onboard.timezones': string;
+  'onboard.languages': string;
+  'onboard.jobType': string;
+  'onboard.fullTime': string;
+  'onboard.partTime': string;
+  'onboard.contract': string;
+  'onboard.freelance': string;
+  'onboard.internship': string;
+  'onboard.country': string;
+  'onboard.countryPlaceholder': string;
+  'onboard.planUpgradeHint': string;
+  'onboard.matchesPerWeek': string;
+  'onboard.includesAgent': string;
+  'onboard.agreeTermsLabel': string;
+  'onboard.agreeTermsAnd': string;
+  'onboard.paymentRedirectHint': string;
+  'onboard.continueToPayment': string;
+  'onboard.continue': string;
+  'onboard.back': string;
+  'onboard.submitting': string;
+  'onboard.openingSignIn': string;
+  'onboard.draftSaveWarning': string;
+  'onboard.validationJobTitle': string;
+  'onboard.validationCV': string;
+  'onboard.validationCVSize': string;
+  'onboard.validationCVFormat': string;
+  'onboard.validationRegion': string;
+  'onboard.validationCountry': string;
+  'onboard.validationLanguage': string;
+  'onboard.validationJobType': string;
+  'onboard.validationTerms': string;
+
   // ---- CTA ----
   'cta.twoMinutes': string;
   'cta.twoMinutesHint': string;
@@ -426,6 +497,82 @@ const en: Strings = {
   'feed.empty': 'Nothing to show here yet.',
   'feed.tryAllFilter': "Try the 'All' filter.",
   'feed.loadError': "Couldn't load your opportunities.",
+
+  'onboard.step': 'Step',
+  'onboard.of': 'of',
+  'onboard.aboutYou': 'About you',
+  'onboard.yourPreferences': 'Your preferences',
+  'onboard.choosePlan': 'Choose your plan',
+  'onboard.aboutYouHint':
+    "Tell us what you're looking for so we can surface the most relevant roles.",
+  'onboard.preferencesHint': "We'll filter out roles that don't match your location and timezone.",
+  'onboard.choosePlanHint':
+    'You can upgrade or cancel any time. All plans include weekly matches to your inbox.',
+  'onboard.targetJobTitle': 'Target job title',
+  'onboard.targetJobTitlePlaceholder': 'e.g. Senior Software Engineer',
+  'onboard.experienceLevel': 'Experience level',
+  'onboard.entry': 'Entry (0–2 years)',
+  'onboard.junior': 'Junior (2–4 years)',
+  'onboard.mid': 'Mid-level (4–6 years)',
+  'onboard.senior': 'Senior (6–10 years)',
+  'onboard.lead': 'Lead (10+ years)',
+  'onboard.executive': 'Executive',
+  'onboard.jobSearchStatus': 'Job search status',
+  'onboard.activelyLooking': 'Actively looking',
+  'onboard.openToOffers': 'Open to offers',
+  'onboard.casuallyBrowsing': 'Casually browsing',
+  'onboard.targetSalary': 'Target salary (optional)',
+  'onboard.preferNotToSay': 'Prefer not to say',
+  'onboard.uploadCV': 'Upload your CV (optional)',
+  'onboard.chooseFile': 'Choose file',
+  'onboard.cvFormats': 'PDF, DOCX, RTF, or TXT · up to 10 MB',
+  'onboard.readyToUpload': 'ready to upload',
+  'onboard.remove': 'Remove',
+  'onboard.cvPrivacy':
+    "Your CV is used to match you with relevant jobs. It's never shared with employers without your action.",
+  'onboard.atsReport': 'Email me a free resume score (ATS-compatibility check).',
+  'onboard.regions': "Regions you're able to work in",
+  'onboard.anywhere': 'Anywhere',
+  'onboard.africa': 'Africa',
+  'onboard.europe': 'Europe',
+  'onboard.northAmerica': 'North America',
+  'onboard.southAmerica': 'South America',
+  'onboard.asia': 'Asia',
+  'onboard.oceania': 'Oceania',
+  'onboard.timezones': 'Preferred time zones (optional)',
+  'onboard.languages': 'Languages you work in',
+  'onboard.jobType': 'Job type',
+  'onboard.fullTime': 'Full-time',
+  'onboard.partTime': 'Part-time',
+  'onboard.contract': 'Contract',
+  'onboard.freelance': 'Freelance',
+  'onboard.internship': 'Internship',
+  'onboard.country': 'Country',
+  'onboard.countryPlaceholder': 'e.g. Kenya',
+  'onboard.planUpgradeHint':
+    'You can upgrade or cancel any time. All plans include weekly matches to your inbox.',
+  'onboard.matchesPerWeek': 'Up to {count} matches per week',
+  'onboard.includesAgent': 'Includes a dedicated agent',
+  'onboard.agreeTermsLabel': 'I agree to the',
+  'onboard.agreeTermsAnd': 'and',
+  'onboard.paymentRedirectHint':
+    "You'll be redirected to our payment partner to complete the subscription. Cancel any time from your dashboard.",
+  'onboard.continueToPayment': 'Continue to payment',
+  'onboard.continue': 'Continue',
+  'onboard.back': 'Back',
+  'onboard.submitting': 'Submitting…',
+  'onboard.openingSignIn': 'Opening sign-in…',
+  'onboard.draftSaveWarning':
+    "We couldn't save your progress. Your answers are still here; we'll try again on the next step.",
+  'onboard.validationJobTitle': 'Enter a target job title',
+  'onboard.validationCV': 'Upload your CV to continue',
+  'onboard.validationCVSize': 'CV must be 10 MB or smaller',
+  'onboard.validationCVFormat': 'Upload a PDF, DOCX, RTF, or TXT file',
+  'onboard.validationRegion': 'Pick at least one region',
+  'onboard.validationCountry': 'Enter your country',
+  'onboard.validationLanguage': 'Pick at least one language',
+  'onboard.validationJobType': 'Pick at least one job type',
+  'onboard.validationTerms': 'Please agree to the Terms before finishing',
 
   'dash.title': 'Your dashboard',
   'dash.setupIncomplete': 'Setup incomplete',
@@ -650,6 +797,83 @@ const es: Strings = {
   'feed.tryAllFilter': "Prueba el filtro 'Todas'.",
   'feed.loadError': 'No pudimos cargar tus oportunidades.',
 
+  'onboard.step': 'Paso',
+  'onboard.of': 'de',
+  'onboard.aboutYou': 'Sobre ti',
+  'onboard.yourPreferences': 'Tus preferencias',
+  'onboard.choosePlan': 'Elige tu plan',
+  'onboard.aboutYouHint': 'Cuéntanos qué buscas para mostrarte las vacantes más relevantes.',
+  'onboard.preferencesHint':
+    'Filtraremos las vacantes que no coincidan con tu ubicación y zona horaria.',
+  'onboard.choosePlanHint':
+    'Puedes cambiar o cancelar en cualquier momento. Todos los planes incluyen coincidencias semanales en tu correo.',
+  'onboard.targetJobTitle': 'Puesto objetivo',
+  'onboard.targetJobTitlePlaceholder': 'p.ej. Ingeniero de Software Senior',
+  'onboard.experienceLevel': 'Nivel de experiencia',
+  'onboard.entry': 'Inicial (0–2 años)',
+  'onboard.junior': 'Junior (2–4 años)',
+  'onboard.mid': 'Intermedio (4–6 años)',
+  'onboard.senior': 'Senior (6–10 años)',
+  'onboard.lead': 'Líder (10+ años)',
+  'onboard.executive': 'Ejecutivo',
+  'onboard.jobSearchStatus': 'Estado de búsqueda',
+  'onboard.activelyLooking': 'En búsqueda activa',
+  'onboard.openToOffers': 'Abierto a ofertas',
+  'onboard.casuallyBrowsing': 'Explorando sin prisa',
+  'onboard.targetSalary': 'Salario objetivo (opcional)',
+  'onboard.preferNotToSay': 'Prefiero no decirlo',
+  'onboard.uploadCV': 'Sube tu CV (opcional)',
+  'onboard.chooseFile': 'Elegir archivo',
+  'onboard.cvFormats': 'PDF, DOCX, RTF o TXT · hasta 10 MB',
+  'onboard.readyToUpload': 'listo para subir',
+  'onboard.remove': 'Eliminar',
+  'onboard.cvPrivacy':
+    'Tu CV se usa para encontrarte vacantes relevantes. Nunca se comparte con empleadores sin tu acción.',
+  'onboard.atsReport':
+    'Envíame un análisis gratuito de mi CV (verificación de compatibilidad ATS).',
+  'onboard.regions': 'Regiones en las que puedes trabajar',
+  'onboard.anywhere': 'Cualquier lugar',
+  'onboard.africa': 'África',
+  'onboard.europe': 'Europa',
+  'onboard.northAmerica': 'Norteamérica',
+  'onboard.southAmerica': 'Sudamérica',
+  'onboard.asia': 'Asia',
+  'onboard.oceania': 'Oceanía',
+  'onboard.timezones': 'Zonas horarias preferidas (opcional)',
+  'onboard.languages': 'Idiomas en los que trabajas',
+  'onboard.jobType': 'Tipo de empleo',
+  'onboard.fullTime': 'Tiempo completo',
+  'onboard.partTime': 'Medio tiempo',
+  'onboard.contract': 'Contrato',
+  'onboard.freelance': 'Freelance',
+  'onboard.internship': 'Pasantía',
+  'onboard.country': 'País',
+  'onboard.countryPlaceholder': 'p.ej. México',
+  'onboard.planUpgradeHint':
+    'Puedes cambiar o cancelar en cualquier momento. Todos los planes incluyen coincidencias semanales en tu correo.',
+  'onboard.matchesPerWeek': 'Hasta {count} coincidencias por semana',
+  'onboard.includesAgent': 'Incluye un agente dedicado',
+  'onboard.agreeTermsLabel': 'Acepto los',
+  'onboard.agreeTermsAnd': 'y',
+  'onboard.paymentRedirectHint':
+    'Serás redirigido a nuestro socio de pagos para completar la suscripción. Cancela en cualquier momento desde tu panel.',
+  'onboard.continueToPayment': 'Continuar al pago',
+  'onboard.continue': 'Continuar',
+  'onboard.back': 'Atrás',
+  'onboard.submitting': 'Enviando…',
+  'onboard.openingSignIn': 'Abriendo inicio de sesión…',
+  'onboard.draftSaveWarning':
+    'No pudimos guardar tu progreso. Tus respuestas siguen aquí; lo intentaremos de nuevo en el siguiente paso.',
+  'onboard.validationJobTitle': 'Introduce un puesto objetivo',
+  'onboard.validationCV': 'Sube tu CV para continuar',
+  'onboard.validationCVSize': 'El CV debe ser de 10 MB o menos',
+  'onboard.validationCVFormat': 'Sube un archivo PDF, DOCX, RTF o TXT',
+  'onboard.validationRegion': 'Selecciona al menos una región',
+  'onboard.validationCountry': 'Introduce tu país',
+  'onboard.validationLanguage': 'Selecciona al menos un idioma',
+  'onboard.validationJobType': 'Selecciona al menos un tipo de empleo',
+  'onboard.validationTerms': 'Acepta los Términos antes de finalizar',
+
   'dash.title': 'Tu panel',
   'dash.setupIncomplete': 'Configuración incompleta',
   'dash.finishPayment': 'Completa el pago para activar el emparejamiento.',
@@ -873,6 +1097,84 @@ const fr: Strings = {
   'feed.empty': 'Rien à afficher pour le moment.',
   'feed.tryAllFilter': 'Essayez le filtre « Tout ».',
   'feed.loadError': 'Impossible de charger vos opportunités.',
+
+  'onboard.step': 'Étape',
+  'onboard.of': 'sur',
+  'onboard.aboutYou': 'À propos de vous',
+  'onboard.yourPreferences': 'Vos préférences',
+  'onboard.choosePlan': 'Choisissez votre plan',
+  'onboard.aboutYouHint':
+    'Dites-nous ce que vous recherchez afin que nous puissions afficher les postes les plus pertinents.',
+  'onboard.preferencesHint':
+    'Nous filtrerons les postes qui ne correspondent pas à votre localisation et fuseau horaire.',
+  'onboard.choosePlanHint':
+    'Vous pouvez changer ou résilier à tout moment. Tous les plans incluent des correspondances hebdomadaires dans votre boîte mail.',
+  'onboard.targetJobTitle': 'Poste recherché',
+  'onboard.targetJobTitlePlaceholder': 'ex. Ingénieur logiciel senior',
+  'onboard.experienceLevel': "Niveau d'expérience",
+  'onboard.entry': 'Débutant (0–2 ans)',
+  'onboard.junior': 'Junior (2–4 ans)',
+  'onboard.mid': 'Intermédiaire (4–6 ans)',
+  'onboard.senior': 'Senior (6–10 ans)',
+  'onboard.lead': 'Lead (10+ ans)',
+  'onboard.executive': 'Dirigeant',
+  'onboard.jobSearchStatus': "Statut de recherche d'emploi",
+  'onboard.activelyLooking': 'En recherche active',
+  'onboard.openToOffers': 'Ouvert aux opportunités',
+  'onboard.casuallyBrowsing': 'En veille',
+  'onboard.targetSalary': 'Salaire cible (facultatif)',
+  'onboard.preferNotToSay': 'Je préfère ne pas répondre',
+  'onboard.uploadCV': 'Importez votre CV (facultatif)',
+  'onboard.chooseFile': 'Choisir un fichier',
+  'onboard.cvFormats': 'PDF, DOCX, RTF ou TXT · 10 Mo maximum',
+  'onboard.readyToUpload': 'prêt à importer',
+  'onboard.remove': 'Supprimer',
+  'onboard.cvPrivacy':
+    "Votre CV est utilisé pour vous proposer des offres pertinentes. Il n'est jamais partagé avec les employeurs sans votre action.",
+  'onboard.atsReport':
+    'Envoyez-moi une évaluation gratuite de mon CV (vérification de compatibilité ATS).',
+  'onboard.regions': 'Régions dans lesquelles vous pouvez travailler',
+  'onboard.anywhere': 'Partout',
+  'onboard.africa': 'Afrique',
+  'onboard.europe': 'Europe',
+  'onboard.northAmerica': 'Amérique du Nord',
+  'onboard.southAmerica': 'Amérique du Sud',
+  'onboard.asia': 'Asie',
+  'onboard.oceania': 'Océanie',
+  'onboard.timezones': 'Fuseaux horaires préférés (facultatif)',
+  'onboard.languages': 'Langues dans lesquelles vous travaillez',
+  'onboard.jobType': 'Type de poste',
+  'onboard.fullTime': 'Temps plein',
+  'onboard.partTime': 'Temps partiel',
+  'onboard.contract': 'CDD / Contrat',
+  'onboard.freelance': 'Freelance',
+  'onboard.internship': 'Stage',
+  'onboard.country': 'Pays',
+  'onboard.countryPlaceholder': 'ex. France',
+  'onboard.planUpgradeHint':
+    'Vous pouvez changer ou résilier à tout moment. Tous les plans incluent des correspondances hebdomadaires dans votre boîte mail.',
+  'onboard.matchesPerWeek': "Jusqu'à {count} correspondances par semaine",
+  'onboard.includesAgent': 'Inclut un agent dédié',
+  'onboard.agreeTermsLabel': "J'accepte les",
+  'onboard.agreeTermsAnd': 'et',
+  'onboard.paymentRedirectHint':
+    'Vous serez redirigé vers notre partenaire de paiement pour finaliser votre abonnement. Résiliez à tout moment depuis votre tableau de bord.',
+  'onboard.continueToPayment': 'Continuer vers le paiement',
+  'onboard.continue': 'Continuer',
+  'onboard.back': 'Retour',
+  'onboard.submitting': 'Envoi en cours…',
+  'onboard.openingSignIn': 'Ouverture de la connexion…',
+  'onboard.draftSaveWarning':
+    "Nous n'avons pas pu sauvegarder votre progression. Vos réponses sont toujours là ; nous réessaierons à l'étape suivante.",
+  'onboard.validationJobTitle': 'Entrez un poste recherché',
+  'onboard.validationCV': 'Importez votre CV pour continuer',
+  'onboard.validationCVSize': 'Le CV doit faire 10 Mo ou moins',
+  'onboard.validationCVFormat': 'Importez un fichier PDF, DOCX, RTF ou TXT',
+  'onboard.validationRegion': 'Sélectionnez au moins une région',
+  'onboard.validationCountry': 'Entrez votre pays',
+  'onboard.validationLanguage': 'Sélectionnez au moins une langue',
+  'onboard.validationJobType': 'Sélectionnez au moins un type de poste',
+  'onboard.validationTerms': 'Veuillez accepter les Conditions avant de terminer',
 
   'dash.title': 'Votre tableau de bord',
   'dash.setupIncomplete': 'Configuration incomplète',
@@ -1099,6 +1401,84 @@ const de: Strings = {
   'feed.tryAllFilter': 'Versuche den Filter „Alle“.',
   'feed.loadError': 'Deine Chancen konnten nicht geladen werden.',
 
+  'onboard.step': 'Schritt',
+  'onboard.of': 'von',
+  'onboard.aboutYou': 'Über dich',
+  'onboard.yourPreferences': 'Deine Präferenzen',
+  'onboard.choosePlan': 'Wähle deinen Plan',
+  'onboard.aboutYouHint':
+    'Erzähle uns, was du suchst, damit wir dir die passendsten Stellen zeigen können.',
+  'onboard.preferencesHint':
+    'Wir filtern Stellen heraus, die nicht zu deinem Standort und deiner Zeitzone passen.',
+  'onboard.choosePlanHint':
+    'Du kannst jederzeit upgraden oder kündigen. Alle Pläne beinhalten wöchentliche Treffer in deinem Posteingang.',
+  'onboard.targetJobTitle': 'Gesuchte Berufsbezeichnung',
+  'onboard.targetJobTitlePlaceholder': 'z.B. Senior Software Engineer',
+  'onboard.experienceLevel': 'Erfahrungsstufe',
+  'onboard.entry': 'Einstieg (0–2 Jahre)',
+  'onboard.junior': 'Junior (2–4 Jahre)',
+  'onboard.mid': 'Mittelstufe (4–6 Jahre)',
+  'onboard.senior': 'Senior (6–10 Jahre)',
+  'onboard.lead': 'Lead (10+ Jahre)',
+  'onboard.executive': 'Führungskraft',
+  'onboard.jobSearchStatus': 'Status der Jobsuche',
+  'onboard.activelyLooking': 'Aktiv auf der Suche',
+  'onboard.openToOffers': 'Offen für Angebote',
+  'onboard.casuallyBrowsing': 'Gelegentlich stöbernd',
+  'onboard.targetSalary': 'Zielgehalt (optional)',
+  'onboard.preferNotToSay': 'Möchte ich nicht angeben',
+  'onboard.uploadCV': 'Lade deinen Lebenslauf hoch (optional)',
+  'onboard.chooseFile': 'Datei auswählen',
+  'onboard.cvFormats': 'PDF, DOCX, RTF oder TXT · bis zu 10 MB',
+  'onboard.readyToUpload': 'bereit zum Hochladen',
+  'onboard.remove': 'Entfernen',
+  'onboard.cvPrivacy':
+    'Dein Lebenslauf wird verwendet, um passende Stellen zu finden. Er wird nie ohne dein Zutun an Arbeitgeber weitergegeben.',
+  'onboard.atsReport':
+    'Schick mir eine kostenlose Lebenslauf-Bewertung (ATS-Kompatibilitätsprüfung).',
+  'onboard.regions': 'Regionen, in denen du arbeiten kannst',
+  'onboard.anywhere': 'Überall',
+  'onboard.africa': 'Afrika',
+  'onboard.europe': 'Europa',
+  'onboard.northAmerica': 'Nordamerika',
+  'onboard.southAmerica': 'Südamerika',
+  'onboard.asia': 'Asien',
+  'onboard.oceania': 'Ozeanien',
+  'onboard.timezones': 'Bevorzugte Zeitzonen (optional)',
+  'onboard.languages': 'Sprachen, in denen du arbeitest',
+  'onboard.jobType': 'Beschäftigungsart',
+  'onboard.fullTime': 'Vollzeit',
+  'onboard.partTime': 'Teilzeit',
+  'onboard.contract': 'Befristet',
+  'onboard.freelance': 'Freiberuflich',
+  'onboard.internship': 'Praktikum',
+  'onboard.country': 'Land',
+  'onboard.countryPlaceholder': 'z.B. Deutschland',
+  'onboard.planUpgradeHint':
+    'Du kannst jederzeit upgraden oder kündigen. Alle Pläne beinhalten wöchentliche Treffer in deinem Posteingang.',
+  'onboard.matchesPerWeek': 'Bis zu {count} Treffer pro Woche',
+  'onboard.includesAgent': 'Inklusive persönlichem Agenten',
+  'onboard.agreeTermsLabel': 'Ich stimme den',
+  'onboard.agreeTermsAnd': 'und',
+  'onboard.paymentRedirectHint':
+    'Du wirst zu unserem Zahlungspartner weitergeleitet, um das Abonnement abzuschließen. Kündige jederzeit über dein Dashboard.',
+  'onboard.continueToPayment': 'Weiter zur Zahlung',
+  'onboard.continue': 'Weiter',
+  'onboard.back': 'Zurück',
+  'onboard.submitting': 'Wird gesendet…',
+  'onboard.openingSignIn': 'Anmeldung wird geöffnet…',
+  'onboard.draftSaveWarning':
+    'Dein Fortschritt konnte nicht gespeichert werden. Deine Antworten sind noch da; wir versuchen es beim nächsten Schritt erneut.',
+  'onboard.validationJobTitle': 'Gib eine gesuchte Berufsbezeichnung ein',
+  'onboard.validationCV': 'Lade deinen Lebenslauf hoch, um fortzufahren',
+  'onboard.validationCVSize': 'Der Lebenslauf darf maximal 10 MB groß sein',
+  'onboard.validationCVFormat': 'Lade eine PDF-, DOCX-, RTF- oder TXT-Datei hoch',
+  'onboard.validationRegion': 'Wähle mindestens eine Region',
+  'onboard.validationCountry': 'Gib dein Land ein',
+  'onboard.validationLanguage': 'Wähle mindestens eine Sprache',
+  'onboard.validationJobType': 'Wähle mindestens eine Beschäftigungsart',
+  'onboard.validationTerms': 'Bitte stimme den Nutzungsbedingungen zu, bevor du fortfährst',
+
   'dash.title': 'Dein Dashboard',
   'dash.setupIncomplete': 'Einrichtung unvollständig',
   'dash.finishPayment': 'Schließe die Zahlung ab, um das Matching zu aktivieren.',
@@ -1323,6 +1703,83 @@ const pt: Strings = {
   'feed.tryAllFilter': "Experimente o filtro 'Todas'.",
   'feed.loadError': 'Não foi possível carregar suas oportunidades.',
 
+  'onboard.step': 'Passo',
+  'onboard.of': 'de',
+  'onboard.aboutYou': 'Sobre você',
+  'onboard.yourPreferences': 'Suas preferências',
+  'onboard.choosePlan': 'Escolha seu plano',
+  'onboard.aboutYouHint': 'Conte-nos o que você procura para exibirmos as vagas mais relevantes.',
+  'onboard.preferencesHint':
+    'Filtraremos vagas que não correspondam à sua localização e fuso horário.',
+  'onboard.choosePlanHint':
+    'Você pode mudar ou cancelar a qualquer momento. Todos os planos incluem compatibilidades semanais no seu e-mail.',
+  'onboard.targetJobTitle': 'Cargo desejado',
+  'onboard.targetJobTitlePlaceholder': 'ex. Engenheiro de Software Sênior',
+  'onboard.experienceLevel': 'Nível de experiência',
+  'onboard.entry': 'Iniciante (0–2 anos)',
+  'onboard.junior': 'Júnior (2–4 anos)',
+  'onboard.mid': 'Pleno (4–6 anos)',
+  'onboard.senior': 'Sênior (6–10 anos)',
+  'onboard.lead': 'Líder (10+ anos)',
+  'onboard.executive': 'Executivo',
+  'onboard.jobSearchStatus': 'Status da busca',
+  'onboard.activelyLooking': 'Buscando ativamente',
+  'onboard.openToOffers': 'Aberto a propostas',
+  'onboard.casuallyBrowsing': 'Explorando sem pressa',
+  'onboard.targetSalary': 'Salário desejado (opcional)',
+  'onboard.preferNotToSay': 'Prefiro não informar',
+  'onboard.uploadCV': 'Envie seu currículo (opcional)',
+  'onboard.chooseFile': 'Escolher arquivo',
+  'onboard.cvFormats': 'PDF, DOCX, RTF ou TXT · até 10 MB',
+  'onboard.readyToUpload': 'pronto para enviar',
+  'onboard.remove': 'Remover',
+  'onboard.cvPrivacy':
+    'Seu currículo é usado para encontrar vagas relevantes. Ele nunca é compartilhado com empregadores sem a sua ação.',
+  'onboard.atsReport':
+    'Envie-me uma avaliação gratuita do currículo (verificação de compatibilidade ATS).',
+  'onboard.regions': 'Regiões em que você pode trabalhar',
+  'onboard.anywhere': 'Qualquer lugar',
+  'onboard.africa': 'África',
+  'onboard.europe': 'Europa',
+  'onboard.northAmerica': 'América do Norte',
+  'onboard.southAmerica': 'América do Sul',
+  'onboard.asia': 'Ásia',
+  'onboard.oceania': 'Oceania',
+  'onboard.timezones': 'Fusos horários preferidos (opcional)',
+  'onboard.languages': 'Idiomas em que você trabalha',
+  'onboard.jobType': 'Tipo de vaga',
+  'onboard.fullTime': 'Tempo integral',
+  'onboard.partTime': 'Meio período',
+  'onboard.contract': 'Contrato',
+  'onboard.freelance': 'Freelancer',
+  'onboard.internship': 'Estágio',
+  'onboard.country': 'País',
+  'onboard.countryPlaceholder': 'ex. Brasil',
+  'onboard.planUpgradeHint':
+    'Você pode mudar ou cancelar a qualquer momento. Todos os planos incluem compatibilidades semanais no seu e-mail.',
+  'onboard.matchesPerWeek': 'Até {count} compatibilidades por semana',
+  'onboard.includesAgent': 'Inclui um agente dedicado',
+  'onboard.agreeTermsLabel': 'Eu concordo com os',
+  'onboard.agreeTermsAnd': 'e',
+  'onboard.paymentRedirectHint':
+    'Você será redirecionado ao nosso parceiro de pagamento para concluir a assinatura. Cancele a qualquer momento pelo seu painel.',
+  'onboard.continueToPayment': 'Continuar para o pagamento',
+  'onboard.continue': 'Continuar',
+  'onboard.back': 'Voltar',
+  'onboard.submitting': 'Enviando…',
+  'onboard.openingSignIn': 'Abrindo login…',
+  'onboard.draftSaveWarning':
+    'Não foi possível salvar seu progresso. Suas respostas ainda estão aqui; tentaremos novamente no próximo passo.',
+  'onboard.validationJobTitle': 'Informe um cargo desejado',
+  'onboard.validationCV': 'Envie seu currículo para continuar',
+  'onboard.validationCVSize': 'O currículo deve ter no máximo 10 MB',
+  'onboard.validationCVFormat': 'Envie um arquivo PDF, DOCX, RTF ou TXT',
+  'onboard.validationRegion': 'Selecione pelo menos uma região',
+  'onboard.validationCountry': 'Informe seu país',
+  'onboard.validationLanguage': 'Selecione pelo menos um idioma',
+  'onboard.validationJobType': 'Selecione pelo menos um tipo de vaga',
+  'onboard.validationTerms': 'Aceite os Termos antes de finalizar',
+
   'dash.title': 'Seu painel',
   'dash.setupIncomplete': 'Configuração incompleta',
   'dash.finishPayment': 'Conclua o pagamento para ativar o matching.',
@@ -1545,6 +2002,81 @@ const ja: Strings = {
   'feed.tryAllFilter': '「すべて」フィルターをお試しください。',
   'feed.loadError': '求人情報を読み込めませんでした。',
 
+  'onboard.step': 'ステップ',
+  'onboard.of': '/',
+  'onboard.aboutYou': 'あなたについて',
+  'onboard.yourPreferences': '希望条件',
+  'onboard.choosePlan': 'プランを選択',
+  'onboard.aboutYouHint': 'お探しの内容を教えてください。最も関連性の高い求人を表示します。',
+  'onboard.preferencesHint': 'お住まいの地域やタイムゾーンに合わない求人を除外します。',
+  'onboard.choosePlanHint':
+    'いつでもアップグレードまたは解約できます。すべてのプランに週次のマッチング配信が含まれます。',
+  'onboard.targetJobTitle': '希望職種',
+  'onboard.targetJobTitlePlaceholder': '例: シニアソフトウェアエンジニア',
+  'onboard.experienceLevel': '経験レベル',
+  'onboard.entry': '新卒・初級（0〜2年）',
+  'onboard.junior': 'ジュニア（2〜4年）',
+  'onboard.mid': 'ミドル（4〜6年）',
+  'onboard.senior': 'シニア（6〜10年）',
+  'onboard.lead': 'リード（10年以上）',
+  'onboard.executive': 'エグゼクティブ',
+  'onboard.jobSearchStatus': '就職活動の状況',
+  'onboard.activelyLooking': '積極的に探している',
+  'onboard.openToOffers': 'オファーに前向き',
+  'onboard.casuallyBrowsing': '気軽に閲覧中',
+  'onboard.targetSalary': '希望年収（任意）',
+  'onboard.preferNotToSay': '回答しない',
+  'onboard.uploadCV': '履歴書をアップロード（任意）',
+  'onboard.chooseFile': 'ファイルを選択',
+  'onboard.cvFormats': 'PDF、DOCX、RTF、TXT · 10 MBまで',
+  'onboard.readyToUpload': 'アップロード準備完了',
+  'onboard.remove': '削除',
+  'onboard.cvPrivacy':
+    '履歴書は適切な求人とのマッチングに使用されます。あなたの操作なしに雇用主と共有されることはありません。',
+  'onboard.atsReport': '無料の履歴書スコア（ATS互換性チェック）をメールで送ってください。',
+  'onboard.regions': '勤務可能な地域',
+  'onboard.anywhere': 'どこでも',
+  'onboard.africa': 'アフリカ',
+  'onboard.europe': 'ヨーロッパ',
+  'onboard.northAmerica': '北米',
+  'onboard.southAmerica': '南米',
+  'onboard.asia': 'アジア',
+  'onboard.oceania': 'オセアニア',
+  'onboard.timezones': '希望タイムゾーン（任意）',
+  'onboard.languages': '業務で使用する言語',
+  'onboard.jobType': '雇用形態',
+  'onboard.fullTime': '正社員',
+  'onboard.partTime': 'パートタイム',
+  'onboard.contract': '契約社員',
+  'onboard.freelance': 'フリーランス',
+  'onboard.internship': 'インターンシップ',
+  'onboard.country': '国',
+  'onboard.countryPlaceholder': '例: 日本',
+  'onboard.planUpgradeHint':
+    'いつでもアップグレードまたは解約できます。すべてのプランに週次のマッチング配信が含まれます。',
+  'onboard.matchesPerWeek': '週最大 {count} 件のマッチング',
+  'onboard.includesAgent': '専任エージェント付き',
+  'onboard.agreeTermsLabel': '以下に同意します：',
+  'onboard.agreeTermsAnd': 'および',
+  'onboard.paymentRedirectHint':
+    'サブスクリプションの完了のため、決済パートナーのページに移動します。ダッシュボードからいつでも解約できます。',
+  'onboard.continueToPayment': '支払いに進む',
+  'onboard.continue': '次へ',
+  'onboard.back': '戻る',
+  'onboard.submitting': '送信中…',
+  'onboard.openingSignIn': 'ログイン画面を開いています…',
+  'onboard.draftSaveWarning':
+    '進行状況を保存できませんでした。入力内容はそのまま残っています。次のステップで再試行します。',
+  'onboard.validationJobTitle': '希望職種を入力してください',
+  'onboard.validationCV': '続行するには履歴書をアップロードしてください',
+  'onboard.validationCVSize': '履歴書は10 MB以下にしてください',
+  'onboard.validationCVFormat': 'PDF、DOCX、RTF、またはTXTファイルをアップロードしてください',
+  'onboard.validationRegion': '少なくとも1つの地域を選択してください',
+  'onboard.validationCountry': '国を入力してください',
+  'onboard.validationLanguage': '少なくとも1つの言語を選択してください',
+  'onboard.validationJobType': '少なくとも1つの雇用形態を選択してください',
+  'onboard.validationTerms': '完了する前に利用規約に同意してください',
+
   'dash.title': 'ダッシュボード',
   'dash.setupIncomplete': '設定が未完了です',
   'dash.finishPayment': 'お支払いを完了してマッチングを有効にしてください。',
@@ -1766,6 +2298,81 @@ const ar: Strings = {
   'feed.tryAllFilter': 'جرّب فلتر "الكل".',
   'feed.loadError': 'تعذر تحميل فرصك.',
 
+  'onboard.step': 'الخطوة',
+  'onboard.of': 'من',
+  'onboard.aboutYou': 'عنك',
+  'onboard.yourPreferences': 'تفضيلاتك',
+  'onboard.choosePlan': 'اختر خطتك',
+  'onboard.aboutYouHint': 'أخبرنا بما تبحث عنه حتى نعرض لك الوظائف الأكثر ملاءمة.',
+  'onboard.preferencesHint': 'سنستبعد الوظائف التي لا تتوافق مع موقعك ومنطقتك الزمنية.',
+  'onboard.choosePlanHint':
+    'يمكنك الترقية أو الإلغاء في أي وقت. جميع الخطط تشمل مطابقات أسبوعية إلى بريدك.',
+  'onboard.targetJobTitle': 'المسمى الوظيفي المطلوب',
+  'onboard.targetJobTitlePlaceholder': 'مثال: مهندس برمجيات أول',
+  'onboard.experienceLevel': 'مستوى الخبرة',
+  'onboard.entry': 'مبتدئ (0–2 سنوات)',
+  'onboard.junior': 'مبتدئ متقدم (2–4 سنوات)',
+  'onboard.mid': 'متوسط (4–6 سنوات)',
+  'onboard.senior': 'خبير (6–10 سنوات)',
+  'onboard.lead': 'قيادي (10+ سنوات)',
+  'onboard.executive': 'تنفيذي',
+  'onboard.jobSearchStatus': 'حالة البحث عن عمل',
+  'onboard.activelyLooking': 'أبحث بنشاط',
+  'onboard.openToOffers': 'منفتح على العروض',
+  'onboard.casuallyBrowsing': 'أتصفح بدون عجلة',
+  'onboard.targetSalary': 'الراتب المستهدف (اختياري)',
+  'onboard.preferNotToSay': 'أفضّل عدم الإفصاح',
+  'onboard.uploadCV': 'ارفع سيرتك الذاتية (اختياري)',
+  'onboard.chooseFile': 'اختر ملفاً',
+  'onboard.cvFormats': 'PDF أو DOCX أو RTF أو TXT · حتى 10 ميجابايت',
+  'onboard.readyToUpload': 'جاهز للرفع',
+  'onboard.remove': 'إزالة',
+  'onboard.cvPrivacy':
+    'تُستخدم سيرتك الذاتية لمطابقتك بالوظائف المناسبة. لن تتم مشاركتها مع أصحاب العمل دون إجراء منك.',
+  'onboard.atsReport': 'أرسل لي تقييماً مجانياً لسيرتي الذاتية (فحص توافق ATS).',
+  'onboard.regions': 'المناطق التي يمكنك العمل فيها',
+  'onboard.anywhere': 'أي مكان',
+  'onboard.africa': 'أفريقيا',
+  'onboard.europe': 'أوروبا',
+  'onboard.northAmerica': 'أمريكا الشمالية',
+  'onboard.southAmerica': 'أمريكا الجنوبية',
+  'onboard.asia': 'آسيا',
+  'onboard.oceania': 'أوقيانوسيا',
+  'onboard.timezones': 'المناطق الزمنية المفضلة (اختياري)',
+  'onboard.languages': 'اللغات التي تعمل بها',
+  'onboard.jobType': 'نوع الوظيفة',
+  'onboard.fullTime': 'دوام كامل',
+  'onboard.partTime': 'دوام جزئي',
+  'onboard.contract': 'عقد محدد',
+  'onboard.freelance': 'عمل حر',
+  'onboard.internship': 'تدريب',
+  'onboard.country': 'البلد',
+  'onboard.countryPlaceholder': 'مثال: مصر',
+  'onboard.planUpgradeHint':
+    'يمكنك الترقية أو الإلغاء في أي وقت. جميع الخطط تشمل مطابقات أسبوعية إلى بريدك.',
+  'onboard.matchesPerWeek': 'حتى {count} مطابقة أسبوعياً',
+  'onboard.includesAgent': 'يتضمن وكيلاً مخصصاً',
+  'onboard.agreeTermsLabel': 'أوافق على',
+  'onboard.agreeTermsAnd': 'و',
+  'onboard.paymentRedirectHint':
+    'ستتم إعادة توجيهك إلى شريك الدفع لإتمام الاشتراك. يمكنك الإلغاء في أي وقت من لوحة التحكم.',
+  'onboard.continueToPayment': 'المتابعة إلى الدفع',
+  'onboard.continue': 'متابعة',
+  'onboard.back': 'رجوع',
+  'onboard.submitting': 'جارٍ الإرسال…',
+  'onboard.openingSignIn': 'جارٍ فتح صفحة تسجيل الدخول…',
+  'onboard.draftSaveWarning':
+    'تعذر حفظ تقدمك. إجاباتك لا تزال هنا؛ سنحاول مجدداً في الخطوة التالية.',
+  'onboard.validationJobTitle': 'أدخل المسمى الوظيفي المطلوب',
+  'onboard.validationCV': 'ارفع سيرتك الذاتية للمتابعة',
+  'onboard.validationCVSize': 'يجب ألا يتجاوز حجم السيرة الذاتية 10 ميجابايت',
+  'onboard.validationCVFormat': 'ارفع ملف PDF أو DOCX أو RTF أو TXT',
+  'onboard.validationRegion': 'اختر منطقة واحدة على الأقل',
+  'onboard.validationCountry': 'أدخل بلدك',
+  'onboard.validationLanguage': 'اختر لغة واحدة على الأقل',
+  'onboard.validationJobType': 'اختر نوع وظيفة واحداً على الأقل',
+  'onboard.validationTerms': 'يرجى الموافقة على الشروط قبل الإنهاء',
+
   'dash.title': 'لوحة التحكم',
   'dash.setupIncomplete': 'الإعداد غير مكتمل',
   'dash.finishPayment': 'أكمل الدفع لتفعيل المطابقة.',
@@ -1985,6 +2592,76 @@ const zh: Strings = {
   'feed.empty': '暂无内容。',
   'feed.tryAllFilter': '试试“全部”筛选。',
   'feed.loadError': '无法加载您的机会。',
+
+  'onboard.step': '第',
+  'onboard.of': '步，共',
+  'onboard.aboutYou': '关于您',
+  'onboard.yourPreferences': '您的偏好',
+  'onboard.choosePlan': '选择套餐',
+  'onboard.aboutYouHint': '告诉我们您在寻找什么，以便我们为您推荐最相关的职位。',
+  'onboard.preferencesHint': '我们将过滤掉不符合您所在地区和时区的职位。',
+  'onboard.choosePlanHint': '您可以随时升级或取消。所有套餐均包含每周匹配推送至您的邮箱。',
+  'onboard.targetJobTitle': '目标职位',
+  'onboard.targetJobTitlePlaceholder': '例如：高级软件工程师',
+  'onboard.experienceLevel': '经验水平',
+  'onboard.entry': '入门（0–2年）',
+  'onboard.junior': '初级（2–4年）',
+  'onboard.mid': '中级（4–6年）',
+  'onboard.senior': '高级（6–10年）',
+  'onboard.lead': '主管（10年以上）',
+  'onboard.executive': '高管',
+  'onboard.jobSearchStatus': '求职状态',
+  'onboard.activelyLooking': '积极求职中',
+  'onboard.openToOffers': '对机会持开放态度',
+  'onboard.casuallyBrowsing': '随便看看',
+  'onboard.targetSalary': '目标薪资（可选）',
+  'onboard.preferNotToSay': '不方便透露',
+  'onboard.uploadCV': '上传简历（可选）',
+  'onboard.chooseFile': '选择文件',
+  'onboard.cvFormats': 'PDF、DOCX、RTF 或 TXT · 最大 10 MB',
+  'onboard.readyToUpload': '准备上传',
+  'onboard.remove': '移除',
+  'onboard.cvPrivacy': '您的简历仅用于匹配相关职位，未经您的操作不会与雇主共享。',
+  'onboard.atsReport': '发送免费简历评分（ATS 兼容性检查）到我的邮箱。',
+  'onboard.regions': '您可以工作的地区',
+  'onboard.anywhere': '全球',
+  'onboard.africa': '非洲',
+  'onboard.europe': '欧洲',
+  'onboard.northAmerica': '北美',
+  'onboard.southAmerica': '南美',
+  'onboard.asia': '亚洲',
+  'onboard.oceania': '大洋洲',
+  'onboard.timezones': '首选时区（可选）',
+  'onboard.languages': '工作语言',
+  'onboard.jobType': '工作类型',
+  'onboard.fullTime': '全职',
+  'onboard.partTime': '兼职',
+  'onboard.contract': '合同制',
+  'onboard.freelance': '自由职业',
+  'onboard.internship': '实习',
+  'onboard.country': '国家',
+  'onboard.countryPlaceholder': '例如：中国',
+  'onboard.planUpgradeHint': '您可以随时升级或取消。所有套餐均包含每周匹配推送至您的邮箱。',
+  'onboard.matchesPerWeek': '每周最多 {count} 个匹配',
+  'onboard.includesAgent': '包含专属顾问',
+  'onboard.agreeTermsLabel': '我同意',
+  'onboard.agreeTermsAnd': '和',
+  'onboard.paymentRedirectHint': '您将被重定向到我们的支付合作伙伴完成订阅。您可以随时从面板取消。',
+  'onboard.continueToPayment': '继续支付',
+  'onboard.continue': '继续',
+  'onboard.back': '返回',
+  'onboard.submitting': '提交中…',
+  'onboard.openingSignIn': '正在打开登录页面…',
+  'onboard.draftSaveWarning': '无法保存您的进度。您的回答仍在这里，我们将在下一步重试。',
+  'onboard.validationJobTitle': '请输入目标职位',
+  'onboard.validationCV': '请上传简历以继续',
+  'onboard.validationCVSize': '简历大小不能超过 10 MB',
+  'onboard.validationCVFormat': '请上传 PDF、DOCX、RTF 或 TXT 文件',
+  'onboard.validationRegion': '请至少选择一个地区',
+  'onboard.validationCountry': '请输入您的国家',
+  'onboard.validationLanguage': '请至少选择一种语言',
+  'onboard.validationJobType': '请至少选择一种工作类型',
+  'onboard.validationTerms': '请在完成前同意服务条款',
 
   'dash.title': '我的面板',
   'dash.setupIncomplete': '设置未完成',
