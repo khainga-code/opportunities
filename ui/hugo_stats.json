@@ -328,6 +328,7 @@
       "mount-deal-list",
       "mount-funding-detail",
       "mount-funding-list",
+      "mount-home-redirect",
       "mount-job-detail",
       "mount-job-list",
       "mount-locale-shard",
