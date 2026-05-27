@@ -34,6 +34,7 @@ Adds the onboarding_draft column and the GET/PUT handlers behind it. No frontend
 ## Task 1.1: Add `onboarding_draft` migration
 
 **Files:**
+
 - Create: `db/migrations/0017_onboarding_draft.sql`
 
 - [ ] **Step 1: Write the migration**
@@ -54,12 +55,14 @@ ALTER TABLE candidate_profiles
 - [ ] **Step 2: Verify migration applies cleanly**
 
 Run:
+
 ```bash
 cd /home/j/code/stawi.opportunities
 docker compose -f deploy/docker-compose.yml up -d postgres
 PGPASSWORD=postgres psql -h localhost -U postgres -d candidates -f db/migrations/0017_onboarding_draft.sql
 PGPASSWORD=postgres psql -h localhost -U postgres -d candidates -c "\d candidate_profiles" | grep onboarding_draft
 ```
+
 Expected output contains: `onboarding_draft | jsonb | not null default '{}'::jsonb`
 
 - [ ] **Step 3: Commit**
@@ -72,6 +75,7 @@ git commit -m "feat(migrations): add candidate_profiles.onboarding_draft JSONB c
 ## Task 1.2: Add Get/Set/Clear draft methods to `CandidateRepository`
 
 **Files:**
+
 - Modify: `pkg/repository/candidate.go` (append three new methods)
 - Create: `pkg/repository/candidate_test.go`
 
@@ -149,9 +153,11 @@ func TestCandidateRepository_OnboardingDraft_UnknownCandidateReturnsEmpty(t *tes
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run:
+
 ```bash
 go test -tags integration -race -run TestCandidateRepository_OnboardingDraft -timeout 120s ./pkg/repository/...
 ```
+
 Expected: FAIL with `repo.GetOnboardingDraft undefined` (the method doesn't exist yet).
 
 - [ ] **Step 3: Implement the three methods**
@@ -228,9 +234,11 @@ func (r *CandidateRepository) ClearOnboardingDraft(ctx context.Context, id strin
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run:
+
 ```bash
 go test -tags integration -race -run TestCandidateRepository_OnboardingDraft -timeout 120s ./pkg/repository/...
 ```
+
 Expected: PASS, two tests OK.
 
 - [ ] **Step 5: Commit**
@@ -252,6 +260,7 @@ against a real Postgres + applied migrations."
 ## Task 1.3: HTTP handlers `GET` / `PUT` `/me/onboarding`
 
 **Files:**
+
 - Create: `apps/matching/service/http/v1/me_onboarding.go`
 - Create: `apps/matching/service/http/v1/me_onboarding_test.go`
 
@@ -416,9 +425,11 @@ func TestOnboardingHandler_MethodOther(t *testing.T) {
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run:
+
 ```bash
 go test -race -run TestOnboardingHandler ./apps/matching/service/http/v1/...
 ```
+
 Expected: FAIL with `undefined: v1.OnboardingHandler`.
 
 - [ ] **Step 3: Implement the handler**
@@ -589,9 +600,11 @@ func handleOnboardingPut(deps OnboardingDeps, w http.ResponseWriter, r *http.Req
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run:
+
 ```bash
 go test -race -run TestOnboardingHandler ./apps/matching/service/http/v1/...
 ```
+
 Expected: PASS, seven test cases.
 
 - [ ] **Step 5: Commit**
@@ -615,14 +628,17 @@ avoid bricking the client for one user."
 ## Task 1.4: Register the handler in `apps/matching/cmd/main.go`
 
 **Files:**
+
 - Modify: `apps/matching/cmd/main.go`
 
 - [ ] **Step 1: Find the existing `/me/subscription` registration site**
 
 Run:
+
 ```bash
 grep -n "/me/subscription\|httpmw.CandidateAuth" apps/matching/cmd/main.go
 ```
+
 Note the line number where the `mux.Handle("GET /me/subscription"...)` block lives. The new `/me/onboarding` block goes immediately after it.
 
 - [ ] **Step 2: Add the handler registration**
@@ -655,17 +671,21 @@ Insert immediately after it:
 - [ ] **Step 3: Build the matching binary to verify no compile errors**
 
 Run:
+
 ```bash
 go build ./apps/matching/...
 ```
+
 Expected: no output (success). If you see `repo.GetOnboardingDraft undefined`, Task 1.2 didn't land; back up.
 
 - [ ] **Step 4: Vet the whole tree to catch any incidental damage**
 
 Run:
+
 ```bash
 go vet ./...
 ```
+
 Expected: no output.
 
 - [ ] **Step 5: Commit**
@@ -687,9 +707,11 @@ package)."
 - [ ] **Step 1: Run the full test suite with race**
 
 Run:
+
 ```bash
 go test -race -timeout 300s ./apps/matching/... ./pkg/httpmw/... ./pkg/repository/...
 ```
+
 Expected: all green. Integration-tagged tests need the postgres testcontainer (Docker must be running locally) — if Docker isn't available the integration-tagged tests skip silently.
 
 - [ ] **Step 2: Open a PR for Phase 1**
@@ -730,11 +752,13 @@ UI work that consumes Phase 1's endpoints. Ships the user-visible behaviour: pos
 ## Task 2.1: Add `fetchOnboardingDraft` / `saveOnboardingDraft` to the API client
 
 **Files:**
+
 - Modify: `ui/app/src/api/candidates.ts`
 
 - [ ] **Step 1: Find the existing `MeSubscription` block as a placement anchor**
 
 Run:
+
 ```bash
 grep -n "fetchMeSubscription\|MeSubscription" ui/app/src/api/candidates.ts
 ```
@@ -775,7 +799,9 @@ export interface OnboardingDraft {
 export async function fetchOnboardingDraft(): Promise<OnboardingDraft> {
   const empty: OnboardingDraft = { step: 1, fields: {} };
   try {
-    const body = await authRuntime().fetch<OnboardingDraft>("/matching/me/onboarding");
+    const body = await authRuntime().fetch<OnboardingDraft>(
+      "/matching/me/onboarding",
+    );
     return {
       step: body.step ?? 1,
       fields: body.fields ?? {},
@@ -805,9 +831,11 @@ export async function saveOnboardingDraft(
 - [ ] **Step 3: Typecheck the change**
 
 Run:
+
 ```bash
 cd ui/app && npm run typecheck
 ```
+
 Expected: clean.
 
 - [ ] **Step 4: Commit**
@@ -826,11 +854,13 @@ re-tries on the next 'Next' click."
 ## Task 2.2: Wizard loads + saves draft
 
 **Files:**
+
 - Modify: `ui/app/src/pages/Onboarding.tsx`
 
 - [ ] **Step 1: Locate the wizard state hooks**
 
 Run:
+
 ```bash
 grep -n "useState<1 | 2 | 3>\|useForm<FormValues>\|export default function Onboarding" ui/app/src/pages/Onboarding.tsx
 ```
@@ -853,36 +883,41 @@ import {
 Then find the body of `export default function Onboarding()`. Immediately after the existing `const [step, setStep] = useState<1 | 2 | 3>(1);` line, insert:
 
 ```ts
-  const [draftLoaded, setDraftLoaded] = useState(false);
-  const [draftSaveWarning, setDraftSaveWarning] = useState<string | null>(null);
+const [draftLoaded, setDraftLoaded] = useState(false);
+const [draftSaveWarning, setDraftSaveWarning] = useState<string | null>(null);
 ```
 
 After the existing `useEffect` that triggers `login()` on `state === "unauthenticated"`, insert a new effect that loads the draft once the candidate is signed in:
 
 ```ts
-  // Resume from server-persisted draft as soon as the candidate is
-  // authenticated. The fetch never throws (api/candidates.ts handles
-  // that); a missing/empty draft renders the wizard at step 1 with
-  // current defaults, which is identical to the initial render.
-  useEffect(() => {
-    if (state !== "authenticated") return;
-    if (draftLoaded) return;
-    let cancelled = false;
-    (async () => {
-      const draft = await fetchOnboardingDraft();
-      if (cancelled) return;
-      // Only overwrite form values we actually have in the draft;
-      // react-hook-form's reset() with partial values keeps the rest
-      // of the defaults intact.
-      form.reset({ ...form.getValues(), ...(draft.fields as Record<string, unknown>) }, {
+// Resume from server-persisted draft as soon as the candidate is
+// authenticated. The fetch never throws (api/candidates.ts handles
+// that); a missing/empty draft renders the wizard at step 1 with
+// current defaults, which is identical to the initial render.
+useEffect(() => {
+  if (state !== "authenticated") return;
+  if (draftLoaded) return;
+  let cancelled = false;
+  (async () => {
+    const draft = await fetchOnboardingDraft();
+    if (cancelled) return;
+    // Only overwrite form values we actually have in the draft;
+    // react-hook-form's reset() with partial values keeps the rest
+    // of the defaults intact.
+    form.reset(
+      { ...form.getValues(), ...(draft.fields as Record<string, unknown>) },
+      {
         keepDirty: false,
         keepDefaultValues: true,
-      });
-      setStep(draft.step);
-      setDraftLoaded(true);
-    })();
-    return () => { cancelled = true; };
-  }, [state, draftLoaded, form]);
+      },
+    );
+    setStep(draft.step);
+    setDraftLoaded(true);
+  })();
+  return () => {
+    cancelled = true;
+  };
+}, [state, draftLoaded, form]);
 ```
 
 - [ ] **Step 3: Save on each Next click**
@@ -896,46 +931,46 @@ grep -n "schema = Step\|setStep((s) => (s + 1)\|form.trigger" ui/app/src/pages/O
 The existing block looks roughly like:
 
 ```tsx
-    if (step === 2) schema = Step2;
-    if (step === 3) schema = Step3;
-    /* ... validation ... */
-    if (step < 3) setStep((s) => (s + 1) as 1 | 2 | 3);
+if (step === 2) schema = Step2;
+if (step === 3) schema = Step3;
+/* ... validation ... */
+if (step < 3) setStep((s) => (s + 1) as 1 | 2 | 3);
 ```
 
 Replace the `if (step < 3) setStep(...)` line with the autosave-then-advance pattern:
 
 ```tsx
-    if (step < 3) {
-      const nextStep = (step + 1) as 1 | 2 | 3;
-      const values = form.getValues();
-      // Subset of the form we expose as `OnboardingDraftFields` —
-      // the cv File and agreeTerms boolean are intentionally excluded
-      // (set on the final submit only).
-      const fieldsForServer: OnboardingDraftFields = {
-        target_job_title:    values.targetJobTitle,
-        experience_level:    values.experienceLevel,
-        job_search_status:   values.jobSearchStatus,
-        salary_range:        values.salaryRange,
-        wants_ats_report:    values.wantsATSReport,
-        preferred_regions:   values.preferredRegions,
-        preferred_timezones: values.preferredTimezones,
-        preferred_languages: values.preferredLanguages,
-        job_types:           values.jobTypes,
-        country:             values.country,
-        plan:                values.plan,
-      };
-      try {
-        await saveOnboardingDraft(nextStep, fieldsForServer);
-        setDraftSaveWarning(null);
-      } catch {
-        // Non-blocking: advance the wizard anyway; show a warning
-        // that the draft didn't save. The next Next click retries.
-        setDraftSaveWarning(
-          "We couldn't save your progress to the server. Your answers are still here; we'll try again on the next step.",
-        );
-      }
-      setStep(nextStep);
-    }
+if (step < 3) {
+  const nextStep = (step + 1) as 1 | 2 | 3;
+  const values = form.getValues();
+  // Subset of the form we expose as `OnboardingDraftFields` —
+  // the cv File and agreeTerms boolean are intentionally excluded
+  // (set on the final submit only).
+  const fieldsForServer: OnboardingDraftFields = {
+    target_job_title: values.targetJobTitle,
+    experience_level: values.experienceLevel,
+    job_search_status: values.jobSearchStatus,
+    salary_range: values.salaryRange,
+    wants_ats_report: values.wantsATSReport,
+    preferred_regions: values.preferredRegions,
+    preferred_timezones: values.preferredTimezones,
+    preferred_languages: values.preferredLanguages,
+    job_types: values.jobTypes,
+    country: values.country,
+    plan: values.plan,
+  };
+  try {
+    await saveOnboardingDraft(nextStep, fieldsForServer);
+    setDraftSaveWarning(null);
+  } catch {
+    // Non-blocking: advance the wizard anyway; show a warning
+    // that the draft didn't save. The next Next click retries.
+    setDraftSaveWarning(
+      "We couldn't save your progress to the server. Your answers are still here; we'll try again on the next step.",
+    );
+  }
+  setStep(nextStep);
+}
 ```
 
 The wrapping function must already be `async` — if it isn't, change its signature: find `function onNext(`/`const onNext = (` and add `async`. The Next button's `onClick={onNext}` doesn't need to change because React tolerates async onClick handlers (the returned promise is fire-and-forget).
@@ -945,22 +980,26 @@ The wrapping function must already be `async` — if it isn't, change its signat
 Find the existing `<Progress step={step} />` line. Immediately above it, insert:
 
 ```tsx
-      {draftSaveWarning && (
-        <div
-          role="status"
-          className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-        >
-          {draftSaveWarning}
-        </div>
-      )}
+{
+  draftSaveWarning && (
+    <div
+      role="status"
+      className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+    >
+      {draftSaveWarning}
+    </div>
+  );
+}
 ```
 
 - [ ] **Step 5: Typecheck + build**
 
 Run:
+
 ```bash
 cd ui/app && npm run typecheck && npm run build
 ```
+
 Both clean.
 
 - [ ] **Step 6: Commit**
@@ -981,6 +1020,7 @@ on the final submit only)."
 ## Task 2.3: AuthCallback routes based on subscription
 
 **Files:**
+
 - Modify: `ui/app/src/components/AuthCallback.tsx`
 
 - [ ] **Step 1: Write the new routing logic**
@@ -996,37 +1036,37 @@ import { fetchMeSubscription } from "@/api/candidates";
 In the `useEffect`, replace:
 
 ```tsx
-    rt.completeRedirect()
-      .then(() => {
-        if (cancelled) return;
-        window.location.assign("/dashboard/");
-      })
+rt.completeRedirect().then(() => {
+  if (cancelled) return;
+  window.location.assign("/dashboard/");
+});
 ```
 
 with:
 
 ```tsx
-    rt.completeRedirect()
-      .then(async () => {
-        if (cancelled) return;
-        // Single gate: payment status decides where the user lands.
-        // fetchMeSubscription's try/catch fallback returns
-        // {status: "none", ...} on any failure, so a wedged
-        // matching service degrades to "send the user to
-        // onboarding" — the safer default for an inactive-or-unknown
-        // subscription. See the paid-flow-routing spec.
-        const sub = await fetchMeSubscription();
-        const target = sub.status === "active" ? "/dashboard/" : "/onboarding/";
-        window.location.assign(target);
-      })
+rt.completeRedirect().then(async () => {
+  if (cancelled) return;
+  // Single gate: payment status decides where the user lands.
+  // fetchMeSubscription's try/catch fallback returns
+  // {status: "none", ...} on any failure, so a wedged
+  // matching service degrades to "send the user to
+  // onboarding" — the safer default for an inactive-or-unknown
+  // subscription. See the paid-flow-routing spec.
+  const sub = await fetchMeSubscription();
+  const target = sub.status === "active" ? "/dashboard/" : "/onboarding/";
+  window.location.assign(target);
+});
 ```
 
 - [ ] **Step 2: Typecheck**
 
 Run:
+
 ```bash
 cd ui/app && npm run typecheck
 ```
+
 Expected: clean.
 
 - [ ] **Step 3: Commit**
@@ -1046,6 +1086,7 @@ flow — the safe default for an unknown subscription."
 ## Task 2.4: Page-level guards on `/dashboard/` and `/onboarding/`
 
 **Files:**
+
 - Modify: `ui/app/src/pages/Dashboard.tsx`
 - Modify: `ui/app/src/pages/Onboarding.tsx`
 
@@ -1054,17 +1095,17 @@ flow — the safe default for an unknown subscription."
 In `ui/app/src/pages/Dashboard.tsx`, find the existing `subQ = useQuery(...)` block (around line 48 — fetches `me-subscription`). Immediately after that block insert:
 
 ```ts
-  // Page-level guard: if the user lands here without an active
-  // subscription (direct URL, browser back from /onboarding/, etc.),
-  // bounce them to the wizard. Doesn't fire until the query resolves
-  // so the Skeleton renders during the wait — no flash.
-  useEffect(() => {
-    if (state !== "authenticated") return;
-    if (subQ.isLoading) return;
-    if (subQ.data?.status !== "active") {
-      window.location.assign("/onboarding/");
-    }
-  }, [state, subQ.isLoading, subQ.data?.status]);
+// Page-level guard: if the user lands here without an active
+// subscription (direct URL, browser back from /onboarding/, etc.),
+// bounce them to the wizard. Doesn't fire until the query resolves
+// so the Skeleton renders during the wait — no flash.
+useEffect(() => {
+  if (state !== "authenticated") return;
+  if (subQ.isLoading) return;
+  if (subQ.data?.status !== "active") {
+    window.location.assign("/onboarding/");
+  }
+}, [state, subQ.isLoading, subQ.data?.status]);
 ```
 
 - [ ] **Step 2: Add the Onboarding guard**
@@ -1072,12 +1113,12 @@ In `ui/app/src/pages/Dashboard.tsx`, find the existing `subQ = useQuery(...)` bl
 In `ui/app/src/pages/Onboarding.tsx`, near the existing `const { state, login } = useAuth();` line, add a subscription query just below it:
 
 ```ts
-  const subQ = useQuery({
-    queryKey: ["me-subscription"],
-    queryFn: fetchMeSubscription,
-    enabled: state === "authenticated",
-    staleTime: 60_000,
-  });
+const subQ = useQuery({
+  queryKey: ["me-subscription"],
+  queryFn: fetchMeSubscription,
+  enabled: state === "authenticated",
+  staleTime: 60_000,
+});
 ```
 
 (Add to the existing import line for `@/api/candidates` whatever you don't already have: `fetchMeSubscription`. And add `import { useQuery } from "@tanstack/react-query";` to the top — check first whether it's already imported.)
@@ -1085,23 +1126,25 @@ In `ui/app/src/pages/Onboarding.tsx`, near the existing `const { state, login } 
 Then immediately under the `subQ` declaration, add the mirror guard:
 
 ```ts
-  // Mirror guard: a paid user shouldn't be in the wizard. Bouncing
-  // them keeps the URL bar honest.
-  useEffect(() => {
-    if (state !== "authenticated") return;
-    if (subQ.isLoading) return;
-    if (subQ.data?.status === "active") {
-      window.location.assign("/dashboard/");
-    }
-  }, [state, subQ.isLoading, subQ.data?.status]);
+// Mirror guard: a paid user shouldn't be in the wizard. Bouncing
+// them keeps the URL bar honest.
+useEffect(() => {
+  if (state !== "authenticated") return;
+  if (subQ.isLoading) return;
+  if (subQ.data?.status === "active") {
+    window.location.assign("/dashboard/");
+  }
+}, [state, subQ.isLoading, subQ.data?.status]);
 ```
 
 - [ ] **Step 3: Typecheck + build**
 
 Run:
+
 ```bash
 cd ui/app && npm run typecheck && npm run build
 ```
+
 Both clean.
 
 - [ ] **Step 4: Commit**
@@ -1120,15 +1163,18 @@ state already renders during the subQ wait so there's no flash."
 ## Task 2.5: Clear draft inside the existing `POST /candidates/onboard` submit
 
 **Files:**
+
 - Locate the existing handler for `POST /candidates/onboard` (it doesn't live in `apps/matching/service/http/v1/` — find it).
 - Modify whatever handler currently writes the candidate profile from the final submit.
 
 - [ ] **Step 1: Find the onboard handler**
 
 Run:
+
 ```bash
 grep -rn "candidates/onboard\|HandleFunc.*onboard\|OnboardHandler" apps/ pkg/ | grep -v _test.go
 ```
+
 There may be no existing handler — the wizard might call a path that just lands on the same `/candidates/preferences` handler with the full payload. If `candidates/onboard` is registered nowhere, the wizard's `submitOnboarding` call is misdirected and that's a pre-existing bug; flag it and the simplest fix is to add the handler now. The handler should:
 
 1. Validate the payload (target_job_title required, plan in {starter, pro, managed}, etc.).
@@ -1157,6 +1203,7 @@ err := candidateRepo.WithTx(ctx, func(txRepo *repository.CandidateRepository) er
 - [ ] **Step 3: If the handler does NOT exist, add it as a new file**
 
 Create `apps/matching/service/http/v1/candidates_onboard.go` with a handler that:
+
 - Wraps in `httpmw.CandidateAuth`.
 - Decodes the JSON body into a struct mirroring the wizard's final payload.
 - Validates the same fields the existing Step3 schema validates on the client.
@@ -1170,6 +1217,7 @@ Register the handler in `apps/matching/cmd/main.go` next to `/candidates/prefere
 - [ ] **Step 4: Test the transaction guarantee**
 
 Add an integration test in `pkg/repository/candidate_test.go` that:
+
 1. Writes a draft.
 2. Runs a transaction that updates the candidate row then calls `ClearOnboardingDraft`, but the caller forces a rollback.
 3. Reads the draft back and asserts it's still there (rollback worked).
@@ -1213,9 +1261,11 @@ func TestCandidateRepository_OnboardingDraft_ClearedInTransaction(t *testing.T) 
 ```
 
 Run:
+
 ```bash
 go test -tags integration -race -run TestCandidateRepository_OnboardingDraft -timeout 120s ./pkg/repository/...
 ```
+
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -1254,6 +1304,7 @@ Wait for the workflow green. Flux's ImagePolicy will pick up the new tag within 
 - [ ] **Step 2: Smoke-test in a real browser**
 
 Once the new image is live:
+
 1. Open `https://jobs.stawi.org/` in incognito → click Sign In → complete OIDC.
 2. Expected: lands on `/onboarding/` (no subscription).
 3. Fill Step 1 → click Next.
@@ -1277,6 +1328,7 @@ Adds the missing `candidate_saved_jobs` table, the `GET /me/opportunities` aggre
 ## Task 3a.1: `candidate_saved_jobs` migration
 
 **Files:**
+
 - Create: `db/migrations/0018_candidate_saved_jobs.sql`
 
 - [ ] **Step 1: Write the migration**
@@ -1307,6 +1359,7 @@ CREATE INDEX IF NOT EXISTS idx_candidate_saved_jobs_candidate_created
 PGPASSWORD=postgres psql -h localhost -U postgres -d candidates -f db/migrations/0018_candidate_saved_jobs.sql
 PGPASSWORD=postgres psql -h localhost -U postgres -d candidates -c "\d candidate_saved_jobs"
 ```
+
 Expected output shows the table + index.
 
 - [ ] **Step 3: Commit**
@@ -1319,6 +1372,7 @@ git commit -m "feat(migrations): candidate_saved_jobs table"
 ## Task 3a.2: `pkg/savedjobs/store.go` with `Star` / `Unstar` / `ListByCandidate`
 
 **Files:**
+
 - Create: `pkg/savedjobs/store.go`
 - Create: `pkg/savedjobs/store_test.go`
 
@@ -1386,6 +1440,7 @@ func TestStore_UnstarUnknownPairIsNoop(t *testing.T) {
 ```bash
 go test -tags integration -race -run TestStore_StarUnstarRoundTrip -timeout 120s ./pkg/savedjobs/...
 ```
+
 Expected: FAIL with `cannot find package savedjobs`.
 
 - [ ] **Step 3: Implement the store**
@@ -1472,6 +1527,7 @@ ORDER BY created_at DESC, opportunity_id
 ```bash
 go test -tags integration -race -timeout 120s ./pkg/savedjobs/...
 ```
+
 Expected: PASS, three tests.
 
 - [ ] **Step 5: Commit**
@@ -1490,6 +1546,7 @@ starred first' without a client-side sort."
 ## Task 3a.3: HTTP handlers `POST` / `DELETE` `/me/saved-jobs/...`
 
 **Files:**
+
 - Create: `apps/matching/service/http/v1/me_saved_jobs.go`
 - Create: `apps/matching/service/http/v1/me_saved_jobs_test.go`
 
@@ -1601,6 +1658,7 @@ func TestSavedJobsHandler_StarPersistErrorIs502(t *testing.T) {
 ```bash
 go test -race -run TestSavedJobsHandler ./apps/matching/service/http/v1/...
 ```
+
 Expected: FAIL with `undefined: v1.SavedJobsHandler`.
 
 - [ ] **Step 3: Implement the handler**
@@ -1712,6 +1770,7 @@ func savedJobsUnstar(deps SavedJobsDeps, w http.ResponseWriter, r *http.Request)
 ```bash
 go test -race -run TestSavedJobsHandler ./apps/matching/service/http/v1/...
 ```
+
 Expected: PASS, four tests.
 
 - [ ] **Step 5: Commit**
@@ -1731,6 +1790,7 @@ delete)."
 ## Task 3a.4: `pkg/matching/store.go` adds `ListOpportunitiesForCandidate`
 
 **Files:**
+
 - Modify: `pkg/matching/store.go`
 - Modify: `pkg/matching/store_test.go` (append the test)
 
@@ -1824,6 +1884,7 @@ func opportunityIDs(items []matching.OpportunityFeedItem) []string {
 ```bash
 go test -tags integration -race -run TestStore_ListOpportunitiesForCandidate -timeout 120s ./pkg/matching/...
 ```
+
 Expected: FAIL with `undefined: matching.ListOpportunitiesForCandidate` (also `matching.OpportunityFeedItem`, `matching.ListOpportunitiesParams`, `matching.FilterAll/Matches/Starred/Applied`).
 
 - [ ] **Step 3: Implement the join + the supporting types**
@@ -2018,6 +2079,7 @@ LIMIT $` + fmt.Sprint(len(args))
 ```bash
 go test -tags integration -race -run TestStore_ListOpportunitiesForCandidate -timeout 120s ./pkg/matching/...
 ```
+
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -2039,6 +2101,7 @@ and never delivered to the candidate."
 ## Task 3a.5: HTTP handler `GET /me/opportunities`
 
 **Files:**
+
 - Create: `apps/matching/service/http/v1/me_opportunities.go`
 - Create: `apps/matching/service/http/v1/me_opportunities_test.go`
 
@@ -2158,6 +2221,7 @@ func TestOpportunitiesHandler_StoreErrorIs502(t *testing.T) {
 ```bash
 go test -race -run TestOpportunitiesHandler ./apps/matching/service/http/v1/...
 ```
+
 Expected: FAIL with `undefined: v1.OpportunitiesHandler`.
 
 - [ ] **Step 3: Implement the handler**
@@ -2291,6 +2355,7 @@ func parseFilter(s string) matching.FeedFilter {
 ```bash
 go test -race -run TestOpportunitiesHandler ./apps/matching/service/http/v1/...
 ```
+
 Expected: PASS, three tests.
 
 - [ ] **Step 5: Commit**
@@ -2310,15 +2375,18 @@ the `score` field for non-matched rows so the JSON shape matches
 ## Task 3a.6: `POST /me/applications` handler (manual apply)
 
 **Files:**
+
 - Create: `apps/matching/service/http/v1/me_applications.go`
 - Create: `apps/matching/service/http/v1/me_applications_test.go`
 
 - [ ] **Step 1: Audit what apps/applications business layer already exposes**
 
 Run:
+
 ```bash
 grep -rn "^func.*Create\|^func.*Apply\|^func.*Transition" pkg/applications/ | grep -v _test.go
 ```
+
 Find the existing "create an application" call in `pkg/applications/business/` — there's already one used by the (not-yet-deployed) applications service. The matching handler will wrap it directly.
 
 - [ ] **Step 2: Write the failing handler test**
@@ -2332,6 +2400,7 @@ Create `apps/matching/service/http/v1/me_applications_test.go`. Mirror the saved
 ```bash
 go test -race -run TestApplicationsHandler ./apps/matching/service/http/v1/...
 ```
+
 Expected: FAIL on missing handler.
 
 - [ ] **Step 4: Implement the handler**
@@ -2452,6 +2521,7 @@ The exact field names depend on what `pkg/applications/business` actually expose
 ```bash
 go test -race -run TestApplicationsHandler ./apps/matching/service/http/v1/...
 ```
+
 Expected: PASS.
 
 - [ ] **Step 7: Commit**
@@ -2472,6 +2542,7 @@ directly."
 ## Task 3a.7: Register all four handlers + ship the backend image
 
 **Files:**
+
 - Modify: `apps/matching/cmd/main.go`
 
 - [ ] **Step 1: Wire savedjobs + opportunities + applications handlers**
@@ -2520,6 +2591,7 @@ go build ./apps/matching/...
 go vet ./...
 go test -race -timeout 300s ./apps/matching/... ./pkg/savedjobs/... ./pkg/matching/... ./pkg/httpmw/...
 ```
+
 All clean.
 
 - [ ] **Step 4: Commit**
@@ -2555,6 +2627,7 @@ Replaces the three placeholder panels on the dashboard with one `OpportunitiesFe
 ## Task 3b.1: API client helpers for opportunities + star + apply
 
 **Files:**
+
 - Modify: `ui/app/src/api/candidates.ts`
 
 - [ ] **Step 1: Append the new helpers + types**
@@ -2567,7 +2640,14 @@ In `ui/app/src/api/candidates.ts`, near the bottom (above `getCandidatesOrigin`)
 export type OpportunityFilter = "all" | "matches" | "starred" | "applied";
 
 export interface ApplicationSummary {
-  status: "applied" | "responded" | "interview" | "offer" | "rejected" | "hired" | string;
+  status:
+    | "applied"
+    | "responded"
+    | "interview"
+    | "offer"
+    | "rejected"
+    | "hired"
+    | string;
   applied_at: string;
   last_event_at: string;
   method: "auto" | "manual" | string;
@@ -2607,9 +2687,12 @@ export async function starOpportunity(opportunityId: string): Promise<void> {
 }
 
 export async function unstarOpportunity(opportunityId: string): Promise<void> {
-  await authRuntime().fetch(`/matching/me/saved-jobs/${encodeURIComponent(opportunityId)}`, {
-    method: "DELETE",
-  });
+  await authRuntime().fetch(
+    `/matching/me/saved-jobs/${encodeURIComponent(opportunityId)}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 export async function applyToOpportunity(
@@ -2629,6 +2712,7 @@ export async function applyToOpportunity(
 ```bash
 cd ui/app && npm run typecheck
 ```
+
 Expected: clean.
 
 - [ ] **Step 3: Commit**
@@ -2647,6 +2731,7 @@ rollback in OpportunitiesFeed)."
 ## Task 3b.2: `OpportunityCard` component
 
 **Files:**
+
 - Create: `ui/app/src/components/OpportunityCard.tsx`
 - Create: `ui/app/src/components/__tests__/OpportunityCard.test.tsx`
 
@@ -2671,19 +2756,43 @@ const baseItem: FeedItem = {
 
 describe("OpportunityCard", () => {
   it("renders the match score when present", () => {
-    render(<OpportunityCard item={baseItem} snapshot={null} onStar={vi.fn()} onUnstar={vi.fn()} onApply={vi.fn()} />);
+    render(
+      <OpportunityCard
+        item={baseItem}
+        snapshot={null}
+        onStar={vi.fn()}
+        onUnstar={vi.fn()}
+        onApply={vi.fn()}
+      />,
+    );
     expect(screen.getByText(/82%/i)).toBeInTheDocument();
   });
 
   it("omits the match score when score is missing", () => {
     const item: FeedItem = { ...baseItem, score: undefined };
-    render(<OpportunityCard item={item} snapshot={null} onStar={vi.fn()} onUnstar={vi.fn()} onApply={vi.fn()} />);
+    render(
+      <OpportunityCard
+        item={item}
+        snapshot={null}
+        onStar={vi.fn()}
+        onUnstar={vi.fn()}
+        onApply={vi.fn()}
+      />,
+    );
     expect(screen.queryByText(/%/)).not.toBeInTheDocument();
   });
 
   it("star button calls onStar when unstarred", () => {
     const onStar = vi.fn();
-    render(<OpportunityCard item={baseItem} snapshot={null} onStar={onStar} onUnstar={vi.fn()} onApply={vi.fn()} />);
+    render(
+      <OpportunityCard
+        item={baseItem}
+        snapshot={null}
+        onStar={onStar}
+        onUnstar={vi.fn()}
+        onApply={vi.fn()}
+      />,
+    );
     fireEvent.click(screen.getByRole("button", { name: /save opportunity/i }));
     expect(onStar).toHaveBeenCalledWith("opp_1");
   });
@@ -2691,7 +2800,15 @@ describe("OpportunityCard", () => {
   it("star button calls onUnstar when starred", () => {
     const onUnstar = vi.fn();
     const item = { ...baseItem, starred: true };
-    render(<OpportunityCard item={item} snapshot={null} onStar={vi.fn()} onUnstar={onUnstar} onApply={vi.fn()} />);
+    render(
+      <OpportunityCard
+        item={item}
+        snapshot={null}
+        onStar={vi.fn()}
+        onUnstar={onUnstar}
+        onApply={vi.fn()}
+      />,
+    );
     fireEvent.click(screen.getByRole("button", { name: /remove from saved/i }));
     expect(onUnstar).toHaveBeenCalledWith("opp_1");
   });
@@ -2699,19 +2816,37 @@ describe("OpportunityCard", () => {
   it("shows Apply button when not applied; hides it once applied", () => {
     const onApply = vi.fn();
     const { rerender } = render(
-      <OpportunityCard item={baseItem} snapshot={null} onStar={vi.fn()} onUnstar={vi.fn()} onApply={onApply} />,
+      <OpportunityCard
+        item={baseItem}
+        snapshot={null}
+        onStar={vi.fn()}
+        onUnstar={vi.fn()}
+        onApply={onApply}
+      />,
     );
     fireEvent.click(screen.getByRole("button", { name: /apply/i }));
     expect(onApply).toHaveBeenCalledWith("opp_1");
 
     rerender(
       <OpportunityCard
-        item={{ ...baseItem, application: { status: "applied", applied_at: baseItem.created_at, last_event_at: baseItem.created_at, method: "manual" } }}
+        item={{
+          ...baseItem,
+          application: {
+            status: "applied",
+            applied_at: baseItem.created_at,
+            last_event_at: baseItem.created_at,
+            method: "manual",
+          },
+        }}
         snapshot={null}
-        onStar={vi.fn()} onUnstar={vi.fn()} onApply={onApply}
+        onStar={vi.fn()}
+        onUnstar={vi.fn()}
+        onApply={onApply}
       />,
     );
-    expect(screen.queryByRole("button", { name: /^apply$/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^apply$/i }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(/applied/i)).toBeInTheDocument();
   });
 });
@@ -2722,6 +2857,7 @@ describe("OpportunityCard", () => {
 ```bash
 cd ui/app && npx vitest run src/components/__tests__/OpportunityCard.test.tsx
 ```
+
 Expected: FAIL on missing component.
 
 - [ ] **Step 3: Implement the component**
@@ -2763,7 +2899,13 @@ const STATUS_LABEL: Record<string, string> = {
   hired: "Hired",
 };
 
-export function OpportunityCard({ item, snapshot, onStar, onUnstar, onApply }: Props) {
+export function OpportunityCard({
+  item,
+  snapshot,
+  onStar,
+  onUnstar,
+  onApply,
+}: Props) {
   const title = snapshot?.title ?? "Loading…";
   const company = snapshot?.company ?? "";
   const location = snapshot?.location ?? "";
@@ -2837,6 +2979,7 @@ export function OpportunityCard({ item, snapshot, onStar, onUnstar, onApply }: P
 ```bash
 cd ui/app && npx vitest run src/components/__tests__/OpportunityCard.test.tsx
 ```
+
 Expected: PASS, five tests.
 
 - [ ] **Step 5: Commit**
@@ -2855,12 +2998,14 @@ via aria-label."
 ## Task 3b.3: `OpportunitiesFeed` component (filter chips, pagination, optimistic mutations)
 
 **Files:**
+
 - Create: `ui/app/src/components/OpportunitiesFeed.tsx`
 - Create: `ui/app/src/components/__tests__/OpportunitiesFeed.test.tsx`
 
 - [ ] **Step 1: Write the failing component test**
 
 Create `ui/app/src/components/__tests__/OpportunitiesFeed.test.tsx`. Cover:
+
 1. Renders the four filter chips; clicking one updates `window.location.search` with `?filter=…`.
 2. Fetches `/me/opportunities` on mount and renders rows.
 3. Star button optimistically toggles; if the fetch rejects, the toggle rolls back.
@@ -2891,7 +3036,9 @@ const item = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (api.fetchOpportunities as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [item] });
+  (api.fetchOpportunities as ReturnType<typeof vi.fn>).mockResolvedValue({
+    items: [item],
+  });
   window.history.replaceState({}, "", "/dashboard/");
 });
 
@@ -2906,19 +3053,31 @@ describe("OpportunitiesFeed", () => {
     render(<OpportunitiesFeed />);
     await screen.findByText(/loading|matches/i);
     fireEvent.click(screen.getByRole("button", { name: /^starred$/i }));
-    await waitFor(() => expect(api.fetchOpportunities).toHaveBeenCalledWith({ filter: "starred" }));
+    await waitFor(() =>
+      expect(api.fetchOpportunities).toHaveBeenCalledWith({
+        filter: "starred",
+      }),
+    );
     expect(window.location.search).toBe("?filter=starred");
   });
 
   it("star click rolls back when the API rejects", async () => {
-    (api.starOpportunity as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("network"));
+    (api.starOpportunity as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("network"),
+    );
     render(<OpportunitiesFeed />);
-    await waitFor(() => screen.getByRole("button", { name: /save opportunity/i }));
+    await waitFor(() =>
+      screen.getByRole("button", { name: /save opportunity/i }),
+    );
     fireEvent.click(screen.getByRole("button", { name: /save opportunity/i }));
     // Optimistic flip:
-    await waitFor(() => screen.getByRole("button", { name: /remove from saved/i }));
+    await waitFor(() =>
+      screen.getByRole("button", { name: /remove from saved/i }),
+    );
     // Rollback after the rejection settles:
-    await waitFor(() => screen.getByRole("button", { name: /save opportunity/i }));
+    await waitFor(() =>
+      screen.getByRole("button", { name: /save opportunity/i }),
+    );
   });
 });
 ```
@@ -2928,6 +3087,7 @@ describe("OpportunitiesFeed", () => {
 ```bash
 cd ui/app && npx vitest run src/components/__tests__/OpportunitiesFeed.test.tsx
 ```
+
 Expected: FAIL on missing component.
 
 - [ ] **Step 3: Implement the component**
@@ -2947,10 +3107,10 @@ import {
 import { OpportunityCard } from "./OpportunityCard";
 
 const FILTERS: { id: OpportunityFilter; label: string }[] = [
-  { id: "all",     label: "All"      },
-  { id: "matches", label: "Matches"  },
-  { id: "starred", label: "Starred"  },
-  { id: "applied", label: "Applied"  },
+  { id: "all", label: "All" },
+  { id: "matches", label: "Matches" },
+  { id: "starred", label: "Starred" },
+  { id: "applied", label: "Applied" },
 ];
 
 function readFilterFromURL(): OpportunityFilter {
@@ -2983,14 +3143,18 @@ export function OpportunitiesFeed() {
       setItems((prev) => (cursor ? [...prev, ...page.items] : page.items));
       setNextCursor(page.next_cursor);
     } catch {
-      setError("Couldn't load your opportunities. Refresh in a few seconds — if this keeps happening, drop us a line at jobs@stawi.org.");
+      setError(
+        "Couldn't load your opportunities. Refresh in a few seconds — if this keeps happening, drop us a line at jobs@stawi.org.",
+      );
     } finally {
       setLoading(false);
     }
   }, []);
 
   // Initial load + on filter change.
-  useEffect(() => { void load(filter); }, [filter, load]);
+  useEffect(() => {
+    void load(filter);
+  }, [filter, load]);
 
   const onSelectFilter = (id: OpportunityFilter) => {
     if (id === filter) return;
@@ -2998,42 +3162,67 @@ export function OpportunitiesFeed() {
     setFilter(id);
   };
 
-  const onStar = useCallback(async (id: string) => {
-    const snapshot = items;
-    setItems((prev) => prev.map((it) => (it.opportunity_id === id ? { ...it, starred: true } : it)));
-    try {
-      await starOpportunity(id);
-    } catch {
-      setItems(snapshot);
-    }
-  }, [items]);
+  const onStar = useCallback(
+    async (id: string) => {
+      const snapshot = items;
+      setItems((prev) =>
+        prev.map((it) =>
+          it.opportunity_id === id ? { ...it, starred: true } : it,
+        ),
+      );
+      try {
+        await starOpportunity(id);
+      } catch {
+        setItems(snapshot);
+      }
+    },
+    [items],
+  );
 
-  const onUnstar = useCallback(async (id: string) => {
-    const snapshot = items;
-    setItems((prev) => prev.map((it) => (it.opportunity_id === id ? { ...it, starred: false } : it)));
-    try {
-      await unstarOpportunity(id);
-    } catch {
-      setItems(snapshot);
-    }
-  }, [items]);
+  const onUnstar = useCallback(
+    async (id: string) => {
+      const snapshot = items;
+      setItems((prev) =>
+        prev.map((it) =>
+          it.opportunity_id === id ? { ...it, starred: false } : it,
+        ),
+      );
+      try {
+        await unstarOpportunity(id);
+      } catch {
+        setItems(snapshot);
+      }
+    },
+    [items],
+  );
 
-  const onApply = useCallback(async (id: string) => {
-    const snapshot = items;
-    const now = new Date().toISOString();
-    setItems((prev) =>
-      prev.map((it) =>
-        it.opportunity_id === id
-          ? { ...it, application: { status: "applied", applied_at: now, last_event_at: now, method: "manual" } }
-          : it,
-      ),
-    );
-    try {
-      await applyToOpportunity(id, "manual");
-    } catch {
-      setItems(snapshot);
-    }
-  }, [items]);
+  const onApply = useCallback(
+    async (id: string) => {
+      const snapshot = items;
+      const now = new Date().toISOString();
+      setItems((prev) =>
+        prev.map((it) =>
+          it.opportunity_id === id
+            ? {
+                ...it,
+                application: {
+                  status: "applied",
+                  applied_at: now,
+                  last_event_at: now,
+                  method: "manual",
+                },
+              }
+            : it,
+        ),
+      );
+      try {
+        await applyToOpportunity(id, "manual");
+      } catch {
+        setItems(snapshot);
+      }
+    },
+    [items],
+  );
 
   return (
     <section aria-label="Your opportunities" className="space-y-4">
@@ -3060,14 +3249,20 @@ export function OpportunitiesFeed() {
       </div>
 
       {error ? (
-        <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+        <div
+          role="alert"
+          className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800"
+        >
           {error}
         </div>
       ) : loading && items.length === 0 ? (
-        <p className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">Loading…</p>
+        <p className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">
+          Loading…
+        </p>
       ) : items.length === 0 ? (
         <p className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">
-          Nothing to show here yet. {filter !== "all" && "Try the 'All' filter."}
+          Nothing to show here yet.{" "}
+          {filter !== "all" && "Try the 'All' filter."}
         </p>
       ) : (
         <>
@@ -3076,7 +3271,9 @@ export function OpportunitiesFeed() {
               <OpportunityCard
                 key={it.opportunity_id}
                 item={it}
-                snapshot={null}   /* TODO: hydrate snapshot once we wire R2 OpportunitySnapshot fetch into the feed */
+                snapshot={
+                  null
+                } /* TODO: hydrate snapshot once we wire R2 OpportunitySnapshot fetch into the feed */
                 onStar={onStar}
                 onUnstar={onUnstar}
                 onApply={onApply}
@@ -3105,6 +3302,7 @@ export function OpportunitiesFeed() {
 ```bash
 cd ui/app && npx vitest run src/components/__tests__/OpportunitiesFeed.test.tsx
 ```
+
 Expected: PASS, three tests (or however many you wrote).
 
 - [ ] **Step 5: Commit**
@@ -3126,6 +3324,7 @@ are all explicit (no infinite spinners)."
 ## Task 3b.4: Replace the placeholder panels in `Dashboard.tsx`
 
 **Files:**
+
 - Modify: `ui/app/src/pages/Dashboard.tsx`
 
 - [ ] **Step 1: Remove `MatchesPanel`, `SavedJobsPanel`, `ApplicationsPanel` usages**
@@ -3154,20 +3353,18 @@ In `ui/app/src/pages/Dashboard.tsx`, find the `<section className="space-y-6">` 
 Replace with:
 
 ```tsx
-        <section className="space-y-6">
-          {plan === null || !isActive ? (
-            <CompletePaymentPanel plan={plan} status={sub?.status ?? "none"} />
-          ) : (
-            <>
-              {plan === "managed" && sub?.agent && (
-                <AgentCard agent={sub.agent} />
-              )}
-              <OpportunitiesFeed />
-            </>
-          )}
-          <PreferencesPanel />
-          {plan && isActive && <BillingPanel plan={plan} renewsAt={sub?.renews_at} />}
-        </section>
+<section className="space-y-6">
+  {plan === null || !isActive ? (
+    <CompletePaymentPanel plan={plan} status={sub?.status ?? "none"} />
+  ) : (
+    <>
+      {plan === "managed" && sub?.agent && <AgentCard agent={sub.agent} />}
+      <OpportunitiesFeed />
+    </>
+  )}
+  <PreferencesPanel />
+  {plan && isActive && <BillingPanel plan={plan} renewsAt={sub?.renews_at} />}
+</section>
 ```
 
 - [ ] **Step 2: Delete the now-unused panel components**
@@ -3187,6 +3384,7 @@ import { OpportunitiesFeed } from "@/components/OpportunitiesFeed";
 ```bash
 cd ui/app && npm run typecheck && npm run build
 ```
+
 Both clean.
 
 - [ ] **Step 5: Commit**

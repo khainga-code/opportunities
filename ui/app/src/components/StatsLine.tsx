@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { getConfig } from "@/utils/config";
-import { useI18n } from "@/i18n/I18nProvider";
+import { useEffect, useState } from 'react';
+import { getConfig } from '@/utils/config';
+import { useI18n } from '@/i18n/I18nProvider';
 
 interface Stats {
   views_total: number;
@@ -34,9 +34,9 @@ export default function StatsLine({ slug }: { slug: string }) {
 
   return (
     <p className="mt-3 text-xs text-gray-500">
-      <span aria-hidden>👁</span> {fmt(stats.views_total)} {t("stats.views")}
-      {" • "}
-      <span aria-hidden>✉</span> {fmt(stats.applies_total)} {t("stats.applies")}
+      <span aria-hidden>👁</span> {fmt(stats.views_total)} {t('stats.views')}
+      {' • '}
+      <span aria-hidden>✉</span> {fmt(stats.applies_total)} {t('stats.applies')}
     </p>
   );
 }

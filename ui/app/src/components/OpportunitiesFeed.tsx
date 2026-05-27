@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 import {
   applyToOpportunity,
   fetchOpportunities,
@@ -6,31 +6,31 @@ import {
   unstarOpportunity,
   type FeedItem,
   type OpportunityFilter,
-} from "@/api/candidates";
-import { OpportunityCard } from "./OpportunityCard";
-import { useI18n } from "@/i18n/I18nProvider";
-import type { StringKey } from "@/i18n/strings";
+} from '@/api/candidates';
+import { OpportunityCard } from './OpportunityCard';
+import { useI18n } from '@/i18n/I18nProvider';
+import type { StringKey } from '@/i18n/strings';
 
 const FILTER_KEYS: { id: OpportunityFilter; labelKey: StringKey }[] = [
-  { id: "all",     labelKey: "feed.all"     },
-  { id: "matches", labelKey: "feed.matches" },
-  { id: "starred", labelKey: "feed.starred" },
-  { id: "applied", labelKey: "feed.applied" },
+  { id: 'all', labelKey: 'feed.all' },
+  { id: 'matches', labelKey: 'feed.matches' },
+  { id: 'starred', labelKey: 'feed.starred' },
+  { id: 'applied', labelKey: 'feed.applied' },
 ];
 
 function readFilterFromURL(): OpportunityFilter {
-  if (typeof window === "undefined") return "all";
-  const v = new URL(window.location.href).searchParams.get("filter");
-  if (v === "matches" || v === "starred" || v === "applied") return v;
-  return "all";
+  if (typeof window === 'undefined') return 'all';
+  const v = new URL(window.location.href).searchParams.get('filter');
+  if (v === 'matches' || v === 'starred' || v === 'applied') return v;
+  return 'all';
 }
 
 function writeFilterToURL(filter: OpportunityFilter) {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   const url = new URL(window.location.href);
-  if (filter === "all") url.searchParams.delete("filter");
-  else url.searchParams.set("filter", filter);
-  window.history.pushState({}, "", url.toString());
+  if (filter === 'all') url.searchParams.delete('filter');
+  else url.searchParams.set('filter', filter);
+  window.history.pushState({}, '', url.toString());
 }
 
 export function OpportunitiesFeed() {
@@ -41,21 +41,26 @@ export function OpportunitiesFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (f: OpportunityFilter, cursor?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await fetchOpportunities({ filter: f, cursor });
-      setItems((prev) => (cursor ? [...prev, ...page.items] : page.items));
-      setNextCursor(page.next_cursor);
-    } catch {
-      setError(t("feed.loadError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
+  const load = useCallback(
+    async (f: OpportunityFilter, cursor?: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const page = await fetchOpportunities({ filter: f, cursor });
+        setItems((prev) => (cursor ? [...prev, ...page.items] : page.items));
+        setNextCursor(page.next_cursor);
+      } catch {
+        setError(t('feed.loadError'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t]
+  );
 
-  useEffect(() => { void load(filter); }, [filter, load]);
+  useEffect(() => {
+    void load(filter);
+  }, [filter, load]);
 
   const onSelectFilter = (id: OpportunityFilter) => {
     if (id === filter) return;
@@ -63,42 +68,63 @@ export function OpportunitiesFeed() {
     setFilter(id);
   };
 
-  const onStar = useCallback(async (id: string) => {
-    const snapshot = items;
-    setItems((prev) => prev.map((it) => (it.opportunity_id === id ? { ...it, starred: true } : it)));
-    try {
-      await starOpportunity(id);
-    } catch {
-      setItems(snapshot);
-    }
-  }, [items]);
+  const onStar = useCallback(
+    async (id: string) => {
+      const snapshot = items;
+      setItems((prev) =>
+        prev.map((it) => (it.opportunity_id === id ? { ...it, starred: true } : it))
+      );
+      try {
+        await starOpportunity(id);
+      } catch {
+        setItems(snapshot);
+      }
+    },
+    [items]
+  );
 
-  const onUnstar = useCallback(async (id: string) => {
-    const snapshot = items;
-    setItems((prev) => prev.map((it) => (it.opportunity_id === id ? { ...it, starred: false } : it)));
-    try {
-      await unstarOpportunity(id);
-    } catch {
-      setItems(snapshot);
-    }
-  }, [items]);
+  const onUnstar = useCallback(
+    async (id: string) => {
+      const snapshot = items;
+      setItems((prev) =>
+        prev.map((it) => (it.opportunity_id === id ? { ...it, starred: false } : it))
+      );
+      try {
+        await unstarOpportunity(id);
+      } catch {
+        setItems(snapshot);
+      }
+    },
+    [items]
+  );
 
-  const onApply = useCallback(async (id: string) => {
-    const snapshot = items;
-    const now = new Date().toISOString();
-    setItems((prev) =>
-      prev.map((it) =>
-        it.opportunity_id === id
-          ? { ...it, application: { status: "applied", applied_at: now, last_event_at: now, method: "manual" } }
-          : it,
-      ),
-    );
-    try {
-      await applyToOpportunity(id, "manual");
-    } catch {
-      setItems(snapshot);
-    }
-  }, [items]);
+  const onApply = useCallback(
+    async (id: string) => {
+      const snapshot = items;
+      const now = new Date().toISOString();
+      setItems((prev) =>
+        prev.map((it) =>
+          it.opportunity_id === id
+            ? {
+                ...it,
+                application: {
+                  status: 'applied',
+                  applied_at: now,
+                  last_event_at: now,
+                  method: 'manual',
+                },
+              }
+            : it
+        )
+      );
+      try {
+        await applyToOpportunity(id, 'manual');
+      } catch {
+        setItems(snapshot);
+      }
+    },
+    [items]
+  );
 
   return (
     <section aria-label="Your opportunities" className="space-y-4">
@@ -114,8 +140,8 @@ export function OpportunitiesFeed() {
               onClick={() => onSelectFilter(f.id)}
               className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
                 active
-                  ? "bg-navy-900 text-white"
-                  : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                  ? 'bg-navy-900 text-white'
+                  : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
               {t(f.labelKey)}
@@ -125,14 +151,19 @@ export function OpportunitiesFeed() {
       </div>
 
       {error ? (
-        <div role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+        <div
+          role="alert"
+          className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800"
+        >
           {error}
         </div>
       ) : loading && items.length === 0 ? (
-        <p className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">{t("common.loading")}</p>
+        <p className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">
+          {t('common.loading')}
+        </p>
       ) : items.length === 0 ? (
         <p className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">
-          {t("feed.empty")} {filter !== "all" && t("feed.tryAllFilter")}
+          {t('feed.empty')} {filter !== 'all' && t('feed.tryAllFilter')}
         </p>
       ) : (
         <>
@@ -155,7 +186,7 @@ export function OpportunitiesFeed() {
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               disabled={loading}
             >
-              {loading ? t("common.loading") : t("cta.loadMore")}
+              {loading ? t('common.loading') : t('cta.loadMore')}
             </button>
           )}
         </>

@@ -13,7 +13,11 @@
       "type": "call",
       "name": "Invoke compact",
       "timeout": "90m",
-      "retry": { "max_attempts": 1, "backoff_strategy": "exponential", "initial_backoff": "60s" },
+      "retry": {
+        "max_attempts": 1,
+        "backoff_strategy": "exponential",
+        "initial_backoff": "60s"
+      },
       "call": {
         "action": "http.request",
         "input": {

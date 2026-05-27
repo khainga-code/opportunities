@@ -1,56 +1,55 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import Cascade from "./Cascade";
-import { useAuth } from "@/providers/AuthProvider";
-import { fetchCandidate } from "@/api/candidates";
-import { useI18n } from "@/i18n/I18nProvider";
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import Cascade from './Cascade';
+import { useAuth } from '@/providers/AuthProvider';
+import { fetchCandidate } from '@/api/candidates';
+import { useI18n } from '@/i18n/I18nProvider';
 
 export default function LocaleShard() {
-  const mount = useMemo(
-    () => document.getElementById("mount-locale-shard"),
-    [],
-  );
-  const country = (mount?.getAttribute("data-locale-country") ?? "").toUpperCase();
-  const langsCSV = mount?.getAttribute("data-locale-languages") ?? "";
+  const mount = useMemo(() => document.getElementById('mount-locale-shard'), []);
+  const country = (mount?.getAttribute('data-locale-country') ?? '').toUpperCase();
+  const langsCSV = mount?.getAttribute('data-locale-languages') ?? '';
 
   const languages = useMemo(
     () =>
       langsCSV
-        .split(",")
+        .split(',')
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
-    [langsCSV],
+    [langsCSV]
   );
 
   useEffect(() => {
     if (!country) return;
-    const meta = document.createElement("meta");
-    meta.name = "visitor-locale";
+    const meta = document.createElement('meta');
+    meta.name = 'visitor-locale';
     meta.content = JSON.stringify({ country, languages });
     document.head.appendChild(meta);
-    return () => { meta.remove(); };
+    return () => {
+      meta.remove();
+    };
   }, [country, languages]);
 
   const auth = useAuth();
   const profile = useQuery({
-    queryKey: ["candidate-profile"],
+    queryKey: ['candidate-profile'],
     queryFn: fetchCandidate,
-    enabled: auth.state === "authenticated",
+    enabled: auth.state === 'authenticated',
     staleTime: 5 * 60_000,
   });
   const preferredCountries = useMemo(
     () => splitCSV(profile.data?.preferred_countries),
-    [profile.data?.preferred_countries],
+    [profile.data?.preferred_countries]
   );
   const preferredLanguages = useMemo(
     () => splitCSV(profile.data?.languages),
-    [profile.data?.languages],
+    [profile.data?.languages]
   );
 
   return (
     <ShardStatusBanner country={country} languages={languages}>
       <Cascade
-        filters={{ sort: "recent" }}
+        filters={{ sort: 'recent' }}
         preferredCountries={preferredCountries}
         preferredLanguages={preferredLanguages}
         tierLimit={25}
@@ -74,10 +73,10 @@ function ShardStatusBanner({
   const [dismissed, setDismissed] = useState(false);
   if (dismissed || !country) return <>{children}</>;
 
-  const langsSuffix = languages.length ? ` ${languages.join(", ")}` : "";
-  const message = t("locale.showingJobs")
-    .replace("{country}", country)
-    .replace("{langs}", langsSuffix);
+  const langsSuffix = languages.length ? ` ${languages.join(', ')}` : '';
+  const message = t('locale.showingJobs')
+    .replace('{country}', country)
+    .replace('{langs}', langsSuffix);
 
   return (
     <>
@@ -91,7 +90,7 @@ function ShardStatusBanner({
           onClick={() => setDismissed(true)}
           className="ml-4 text-xs font-medium text-emerald-900 underline hover:text-emerald-950"
         >
-          {t("cta.dismiss")}
+          {t('cta.dismiss')}
         </button>
       </p>
       {children}

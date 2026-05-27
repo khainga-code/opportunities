@@ -1,58 +1,58 @@
-import { useState, type FormEvent } from "react";
-import { authRuntime } from "@/auth/runtime";
-import { useI18n } from "@/i18n/I18nProvider";
-import type { StringKey } from "@/i18n/strings";
+import { useState, type FormEvent } from 'react';
+import { authRuntime } from '@/auth/runtime';
+import { useI18n } from '@/i18n/I18nProvider';
+import type { StringKey } from '@/i18n/strings';
 
 const REASON_KEYS: { value: string; labelKey: StringKey }[] = [
-  { value: "scam", labelKey: "flag.scam" },
-  { value: "expired", labelKey: "flag.expired" },
-  { value: "duplicate", labelKey: "flag.duplicate" },
-  { value: "spam", labelKey: "flag.spam" },
-  { value: "other", labelKey: "flag.other" },
+  { value: 'scam', labelKey: 'flag.scam' },
+  { value: 'expired', labelKey: 'flag.expired' },
+  { value: 'duplicate', labelKey: 'flag.duplicate' },
+  { value: 'spam', labelKey: 'flag.spam' },
+  { value: 'other', labelKey: 'flag.other' },
 ];
 
 const MAX_DESCRIPTION = 1000;
 
 type SubmitState =
-  | { kind: "idle" }
-  | { kind: "submitting" }
-  | { kind: "ok" }
-  | { kind: "duplicate" }
-  | { kind: "unauthorized" }
-  | { kind: "error"; message: string };
+  | { kind: 'idle' }
+  | { kind: 'submitting' }
+  | { kind: 'ok' }
+  | { kind: 'duplicate' }
+  | { kind: 'unauthorized' }
+  | { kind: 'error'; message: string };
 
 export default function FlagModal({ slug }: { slug: string }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState<string>("scam");
-  const [description, setDescription] = useState("");
-  const [state, setState] = useState<SubmitState>({ kind: "idle" });
+  const [reason, setReason] = useState<string>('scam');
+  const [description, setDescription] = useState('');
+  const [state, setState] = useState<SubmitState>({ kind: 'idle' });
 
   function reset(): void {
-    setReason("scam");
-    setDescription("");
-    setState({ kind: "idle" });
+    setReason('scam');
+    setDescription('');
+    setState({ kind: 'idle' });
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
-    if (state.kind === "submitting") return;
-    setState({ kind: "submitting" });
+    if (state.kind === 'submitting') return;
+    setState({ kind: 'submitting' });
     try {
       await authRuntime().fetch(`/jobs/opportunities/${encodeURIComponent(slug)}/flag`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason, description: description.trim() }),
       });
-      setState({ kind: "ok" });
+      setState({ kind: 'ok' });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      if (message.includes("409") || message.toLowerCase().includes("already_flagged")) {
-        setState({ kind: "duplicate" });
-      } else if (message.includes("401") || message.toLowerCase().includes("unauthorized")) {
-        setState({ kind: "unauthorized" });
+      if (message.includes('409') || message.toLowerCase().includes('already_flagged')) {
+        setState({ kind: 'duplicate' });
+      } else if (message.includes('401') || message.toLowerCase().includes('unauthorized')) {
+        setState({ kind: 'unauthorized' });
       } else {
-        setState({ kind: "error", message });
+        setState({ kind: 'error', message });
       }
     }
   }
@@ -68,7 +68,7 @@ export default function FlagModal({ slug }: { slug: string }) {
         className="mt-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-red-700"
       >
         <span aria-hidden>⚠</span>
-        {t("flag.trigger")}
+        {t('flag.trigger')}
       </button>
     );
   }
@@ -85,25 +85,25 @@ export default function FlagModal({ slug }: { slug: string }) {
     >
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
         <h3 id="flag-modal-title" className="text-lg font-semibold text-gray-900">
-          {t("flag.title")}
+          {t('flag.title')}
         </h3>
 
-        {state.kind === "ok" ? (
+        {state.kind === 'ok' ? (
           <div className="mt-4 space-y-3 text-sm text-gray-700">
-            <p>{t("flag.thankYou")}</p>
+            <p>{t('flag.thankYou')}</p>
             <button
               type="button"
               onClick={() => setOpen(false)}
               className="rounded bg-navy-700 px-4 py-2 text-sm font-medium text-white"
             >
-              {t("cta.close")}
+              {t('cta.close')}
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             <div>
               <label htmlFor="flag-reason" className="block text-sm font-medium text-gray-700">
-                {t("flag.reason")}
+                {t('flag.reason')}
               </label>
               <select
                 id="flag-reason"
@@ -121,7 +121,7 @@ export default function FlagModal({ slug }: { slug: string }) {
 
             <div>
               <label htmlFor="flag-description" className="block text-sm font-medium text-gray-700">
-                {t("flag.details")}
+                {t('flag.details')}
               </label>
               <textarea
                 id="flag-description"
@@ -130,26 +130,22 @@ export default function FlagModal({ slug }: { slug: string }) {
                 maxLength={MAX_DESCRIPTION}
                 rows={4}
                 className="mt-1 block w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                placeholder={t("flag.detailsPlaceholder")}
+                placeholder={t('flag.detailsPlaceholder')}
               />
               <p className="mt-1 text-right text-xs text-gray-500">
                 {description.length}/{MAX_DESCRIPTION}
               </p>
             </div>
 
-            {state.kind === "duplicate" && (
-              <p className="text-sm text-amber-700">
-                {t("flag.alreadyFlagged")}
-              </p>
+            {state.kind === 'duplicate' && (
+              <p className="text-sm text-amber-700">{t('flag.alreadyFlagged')}</p>
             )}
-            {state.kind === "unauthorized" && (
-              <p className="text-sm text-red-700">
-                {t("flag.signInRequired")}
-              </p>
+            {state.kind === 'unauthorized' && (
+              <p className="text-sm text-red-700">{t('flag.signInRequired')}</p>
             )}
-            {state.kind === "error" && (
+            {state.kind === 'error' && (
               <p className="text-sm text-red-700">
-                {t("error.submitFlag")} {state.message}
+                {t('error.submitFlag')} {state.message}
               </p>
             )}
 
@@ -159,14 +155,14 @@ export default function FlagModal({ slug }: { slug: string }) {
                 onClick={() => setOpen(false)}
                 className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700"
               >
-                {t("cta.cancel")}
+                {t('cta.cancel')}
               </button>
               <button
                 type="submit"
-                disabled={state.kind === "submitting"}
+                disabled={state.kind === 'submitting'}
                 className="rounded bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
-                {state.kind === "submitting" ? t("flag.submitting") : t("flag.submitButton")}
+                {state.kind === 'submitting' ? t('flag.submitting') : t('flag.submitButton')}
               </button>
             </div>
           </form>

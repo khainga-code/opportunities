@@ -1,8 +1,8 @@
-import { useEffect, useId, useMemo, useState } from "react";
-import { useForm, type SubmitHandler, type UseFormReturn } from "react-hook-form";
-import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
-import { useAuth } from "@/providers/AuthProvider";
+import { useEffect, useId, useMemo, useState } from 'react';
+import { useForm, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
+import { useAuth } from '@/providers/AuthProvider';
 import {
   submitOnboarding,
   uploadCV,
@@ -11,8 +11,8 @@ import {
   saveOnboardingDraft,
   fetchMeSubscription,
   type OnboardingDraftFields,
-} from "@/api/candidates";
-import { PLANS, planById, type PlanId } from "@/utils/plans";
+} from '@/api/candidates';
+import { PLANS, planById, type PlanId } from '@/utils/plans';
 
 // Each step owns a contiguous slice of fields; we validate one step at a
 // time before advancing so errors surface close to the inputs the user
@@ -23,111 +23,103 @@ import { PLANS, planById, type PlanId } from "@/utils/plans";
 // we preselect that tier but they can change before finishing.
 
 const Step1 = z.object({
-  targetJobTitle: z.string().min(2, "Enter a target job title"),
-  experienceLevel: z.enum(["entry", "junior", "mid", "senior", "lead", "executive"]),
-  jobSearchStatus: z.enum(["actively_looking", "open_to_offers", "casually_browsing"]),
+  targetJobTitle: z.string().min(2, 'Enter a target job title'),
+  experienceLevel: z.enum(['entry', 'junior', 'mid', 'senior', 'lead', 'executive']),
+  jobSearchStatus: z.enum(['actively_looking', 'open_to_offers', 'casually_browsing']),
   salaryRange: z.string().optional(),
   wantsATSReport: z.boolean(),
   cv: z
     .any()
-    .refine((v) => v instanceof File, "Upload your CV to continue")
+    .refine((v) => v instanceof File, 'Upload your CV to continue')
     .refine(
       (v) => !(v instanceof File) || v.size <= 10 * 1024 * 1024,
-      "CV must be 10 MB or smaller",
+      'CV must be 10 MB or smaller'
     )
     .refine(
       (v) => !(v instanceof File) || /\.(pdf|docx?|rtf|txt)$/i.test(v.name),
-      "Upload a PDF, DOCX, RTF, or TXT file",
+      'Upload a PDF, DOCX, RTF, or TXT file'
     ),
 });
 
 const Step2 = z.object({
-  preferredRegions: z.array(z.string()).min(1, "Pick at least one region"),
-  country: z.string().min(2, "Enter your country"),
+  preferredRegions: z.array(z.string()).min(1, 'Pick at least one region'),
+  country: z.string().min(2, 'Enter your country'),
   preferredTimezones: z.array(z.string()),
-  preferredLanguages: z.array(z.string()).min(1, "Pick at least one language"),
-  jobTypes: z.array(z.string()).min(1, "Pick at least one job type"),
+  preferredLanguages: z.array(z.string()).min(1, 'Pick at least one language'),
+  jobTypes: z.array(z.string()).min(1, 'Pick at least one job type'),
 });
 
 const Step3 = z.object({
-  plan: z.enum(["starter", "pro", "managed"]),
+  plan: z.enum(['starter', 'pro', 'managed']),
   agreeTerms: z.literal(true, {
-    errorMap: () => ({ message: "Please agree to the Terms before finishing" }),
+    errorMap: () => ({ message: 'Please agree to the Terms before finishing' }),
   }),
 });
 
 // Zod infers cv as File from the `.refine(v => v instanceof File)` chain.
 // But we also need to allow clearing the field (setValue("cv", undefined)),
 // so widen it to File | undefined explicitly.
-type FormValues =
-  Omit<z.infer<typeof Step1>, "cv"> & { cv?: File } &
-  z.infer<typeof Step2> &
+type FormValues = Omit<z.infer<typeof Step1>, 'cv'> & { cv?: File } & z.infer<typeof Step2> &
   z.infer<typeof Step3>;
 
-const STEP_LABELS = ["About you", "Your preferences", "Choose a plan"] as const;
+const STEP_LABELS = ['About you', 'Your preferences', 'Choose a plan'] as const;
 
 const REGIONS = [
-  "Anywhere",
-  "Africa",
-  "Europe",
-  "North America",
-  "South America",
-  "Asia",
-  "Oceania",
+  'Anywhere',
+  'Africa',
+  'Europe',
+  'North America',
+  'South America',
+  'Asia',
+  'Oceania',
 ];
 const TIMEZONES = [
-  "EAT (UTC+3)",
-  "WAT (UTC+1)",
-  "CAT (UTC+2)",
-  "SAST (UTC+2)",
-  "GMT (UTC+0)",
-  "CET (UTC+1)",
-  "EST (UTC-5)",
-  "PST (UTC-8)",
+  'EAT (UTC+3)',
+  'WAT (UTC+1)',
+  'CAT (UTC+2)',
+  'SAST (UTC+2)',
+  'GMT (UTC+0)',
+  'CET (UTC+1)',
+  'EST (UTC-5)',
+  'PST (UTC-8)',
 ];
 
 const LANGUAGES = [
-  "English",
-  "French",
-  "Arabic",
-  "Swahili",
-  "Portuguese",
-  "Spanish",
-  "German",
-  "Mandarin",
+  'English',
+  'French',
+  'Arabic',
+  'Swahili',
+  'Portuguese',
+  'Spanish',
+  'German',
+  'Mandarin',
 ];
 
-const JOB_TYPES = [
-  "Full-time",
-  "Part-time",
-  "Contract",
-  "Freelance",
-  "Internship",
-];
+const JOB_TYPES = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'];
 
 function readPlanFromQuery(): PlanId {
-  if (typeof window === "undefined") return "starter";
-  const p = new URL(window.location.href).searchParams.get("plan");
-  if (p === "starter" || p === "pro" || p === "managed") return p;
-  return "starter";
+  if (typeof window === 'undefined') return 'starter';
+  const p = new URL(window.location.href).searchParams.get('plan');
+  if (p === 'starter' || p === 'pro' || p === 'managed') return p;
+  return 'starter';
 }
 
 export default function Onboarding() {
   const { state, login } = useAuth();
   const subQ = useQuery({
-    queryKey: ["me-subscription"],
+    queryKey: ['me-subscription'],
     queryFn: fetchMeSubscription,
-    enabled: state === "authenticated",
+    enabled: state === 'authenticated',
     staleTime: 60_000,
   });
 
   // Mirror guard: a paid user shouldn't be in the wizard. Bouncing
   // them keeps the URL bar honest.
   useEffect(() => {
-    if (state !== "authenticated") return;
+    if (state !== 'authenticated') return;
     if (subQ.isLoading) return;
-    if (subQ.data?.status === "active") {
-      window.location.assign("/dashboard/");
+    if (subQ.data?.status === 'active') {
+      window.location.assign('/dashboard/');
     }
   }, [state, subQ.isLoading, subQ.data?.status]);
 
@@ -139,20 +131,20 @@ export default function Onboarding() {
   const initialPlan = useMemo(readPlanFromQuery, []);
   const form = useForm<FormValues>({
     defaultValues: {
-      targetJobTitle: "",
-      experienceLevel: "mid",
-      jobSearchStatus: "actively_looking",
+      targetJobTitle: '',
+      experienceLevel: 'mid',
+      jobSearchStatus: 'actively_looking',
       wantsATSReport: true,
       preferredRegions: [],
       preferredTimezones: [],
-      preferredLanguages: ["English"],
-      jobTypes: ["Full-time"],
-      country: "",
+      preferredLanguages: ['English'],
+      jobTypes: ['Full-time'],
+      country: '',
       plan: initialPlan,
       agreeTerms: false as unknown as true,
       cv: undefined,
     },
-    mode: "onBlur",
+    mode: 'onBlur',
   });
 
   // Unauthenticated visitors land here by navigating directly (e.g.
@@ -164,7 +156,7 @@ export default function Onboarding() {
   // dashboard's CompletePaymentPanel routes them back to /pricing/
   // or onboarding completion as needed.
   useEffect(() => {
-    if (state === "unauthenticated") {
+    if (state === 'unauthenticated') {
       void login();
     }
   }, [state, login]);
@@ -174,7 +166,7 @@ export default function Onboarding() {
   // that); a missing/empty draft renders the wizard at step 1 with
   // current defaults, which is identical to the initial render.
   useEffect(() => {
-    if (state !== "authenticated") return;
+    if (state !== 'authenticated') return;
     if (draftLoaded) return;
     let cancelled = false;
     (async () => {
@@ -183,17 +175,22 @@ export default function Onboarding() {
       // Only overwrite form values we actually have in the draft;
       // react-hook-form's reset() with partial values keeps the rest
       // of the defaults intact.
-      form.reset({ ...form.getValues(), ...(draft.fields as Record<string, unknown>) }, {
-        keepDirty: false,
-        keepDefaultValues: true,
-      });
+      form.reset(
+        { ...form.getValues(), ...(draft.fields as Record<string, unknown>) },
+        {
+          keepDirty: false,
+          keepDefaultValues: true,
+        }
+      );
       setStep(draft.step);
       setDraftLoaded(true);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [state, draftLoaded, form]);
 
-  if (state === "unauthenticated" || state === "initializing") {
+  if (state === 'unauthenticated' || state === 'initializing') {
     return (
       <div className="mx-auto flex min-h-[40vh] max-w-md items-center justify-center px-4 py-16 text-center">
         <p className="text-sm text-gray-600">Opening sign-in…</p>
@@ -207,18 +204,18 @@ export default function Onboarding() {
     try {
       // Step 1: create the profile (JSON, no file).
       await submitOnboarding({
-        target_job_title:    data.targetJobTitle,
-        experience_level:    data.experienceLevel,
-        job_search_status:   data.jobSearchStatus,
-        salary_range:        data.salaryRange ?? "",
-        wants_ats_report:    data.wantsATSReport,
-        preferred_regions:   data.preferredRegions,
+        target_job_title: data.targetJobTitle,
+        experience_level: data.experienceLevel,
+        job_search_status: data.jobSearchStatus,
+        salary_range: data.salaryRange ?? '',
+        wants_ats_report: data.wantsATSReport,
+        preferred_regions: data.preferredRegions,
         preferred_timezones: data.preferredTimezones,
         preferred_languages: data.preferredLanguages,
-        job_types:           data.jobTypes,
-        country:             data.country,
-        plan:                data.plan,
-        agree_terms:         data.agreeTerms,
+        job_types: data.jobTypes,
+        country: data.country,
+        plan: data.plan,
+        agree_terms: data.agreeTerms,
       });
 
       // Step 2: if the user attached a CV, upload it separately.
@@ -228,7 +225,7 @@ export default function Onboarding() {
         try {
           await uploadCV(data.cv);
         } catch (cvErr) {
-          console.warn("[onboarding] CV upload failed (profile saved):", cvErr);
+          console.warn('[onboarding] CV upload failed (profile saved):', cvErr);
         }
       }
       // Kick off payment — all tiers are paid, so every onboarded
@@ -238,11 +235,11 @@ export default function Onboarding() {
       // the provider's hosted page.
       try {
         const checkout = await createCheckout({ plan_id: data.plan });
-        if (checkout.status === "redirect" && checkout.redirect_url) {
+        if (checkout.status === 'redirect' && checkout.redirect_url) {
           window.location.href = checkout.redirect_url;
           return;
         }
-        if (checkout.status === "pending" && checkout.prompt_id) {
+        if (checkout.status === 'pending' && checkout.prompt_id) {
           // STK-push flow or Polar session still queuing.  Bounce the
           // user into the dashboard with the prompt id; the dashboard
           // polls /billing/checkout/status and prompts the user to
@@ -251,11 +248,11 @@ export default function Onboarding() {
           return;
         }
         // "failed" or "paid" without a redirect_url.
-        if (checkout.status === "paid") {
-          window.location.href = "/dashboard/?billing=success";
+        if (checkout.status === 'paid') {
+          window.location.href = '/dashboard/?billing=success';
           return;
         }
-        throw new Error(checkout.error || "Checkout did not complete.");
+        throw new Error(checkout.error || 'Checkout did not complete.');
       } catch (checkoutErr) {
         // Checkout failed (provider outage, missing creds). Park
         // the user on the dashboard with an inline banner so they
@@ -265,16 +262,16 @@ export default function Onboarding() {
         setSubmitError(
           checkoutErr instanceof Error && checkoutErr.message
             ? `Profile saved, but payment couldn't start: ${checkoutErr.message}. You can retry from the dashboard.`
-            : "Profile saved, but payment couldn't start. You can retry from the dashboard.",
+            : "Profile saved, but payment couldn't start. You can retry from the dashboard."
         );
-        window.location.href = "/dashboard/?billing=failed";
+        window.location.href = '/dashboard/?billing=failed';
         return;
       }
     } catch (e) {
       setSubmitError(
         e instanceof Error && e.message
           ? `We couldn't save your profile: ${e.message}`
-          : "We couldn't save your profile. Please try again or contact jobs@stawi.org.",
+          : "We couldn't save your profile. Please try again or contact jobs@stawi.org."
       );
     } finally {
       setSubmitting(false);
@@ -299,17 +296,17 @@ export default function Onboarding() {
       // the cv File and agreeTerms boolean are intentionally excluded
       // (set on the final submit only).
       const fieldsForServer: OnboardingDraftFields = {
-        target_job_title:    values.targetJobTitle,
-        experience_level:    values.experienceLevel,
-        job_search_status:   values.jobSearchStatus,
-        salary_range:        values.salaryRange,
-        wants_ats_report:    values.wantsATSReport,
-        preferred_regions:   values.preferredRegions,
+        target_job_title: values.targetJobTitle,
+        experience_level: values.experienceLevel,
+        job_search_status: values.jobSearchStatus,
+        salary_range: values.salaryRange,
+        wants_ats_report: values.wantsATSReport,
+        preferred_regions: values.preferredRegions,
         preferred_timezones: values.preferredTimezones,
         preferred_languages: values.preferredLanguages,
-        job_types:           values.jobTypes,
-        country:             values.country,
-        plan:                values.plan,
+        job_types: values.jobTypes,
+        country: values.country,
+        plan: values.plan,
       };
       try {
         await saveOnboardingDraft(nextStep, fieldsForServer);
@@ -318,17 +315,16 @@ export default function Onboarding() {
         // Non-blocking: advance the wizard anyway; show a warning
         // that the draft didn't save. The next Next click retries.
         setDraftSaveWarning(
-          "We couldn't save your progress to the server. Your answers are still here; we'll try again on the next step.",
+          "We couldn't save your progress to the server. Your answers are still here; we'll try again on the next step."
         );
       }
       setStep(nextStep);
     } else await form.handleSubmit(onSubmit)();
   }
 
-  const selectedPlan = form.watch("plan");
-  const finishLabel = step === 3
-    ? `Continue to payment · $${planById(selectedPlan).price}/mo`
-    : "Continue";
+  const selectedPlan = form.watch('plan');
+  const finishLabel =
+    step === 3 ? `Continue to payment · $${planById(selectedPlan).price}/mo` : 'Continue';
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
@@ -352,10 +348,7 @@ export default function Onboarding() {
         {step === 2 && <Step2Form form={form} />}
         {step === 3 && <Step3Form form={form} />}
         {submitError && (
-          <p
-            className="mt-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700"
-            role="alert"
-          >
+          <p className="mt-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
             {submitError}
           </p>
         )}
@@ -373,7 +366,7 @@ export default function Onboarding() {
             disabled={submitting}
             className="rounded bg-navy-900 px-6 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-navy-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-900 disabled:opacity-60"
           >
-            {submitting ? "Submitting…" : finishLabel}
+            {submitting ? 'Submitting…' : finishLabel}
           </button>
         </div>
       </form>
@@ -402,14 +395,10 @@ function Progress({ step }: { step: 1 | 2 | 3 }) {
             <li key={label} className="flex flex-col gap-1">
               <div
                 className={`h-1.5 rounded-full transition-colors ${
-                  done || active ? "bg-accent-500" : "bg-gray-200"
+                  done || active ? 'bg-accent-500' : 'bg-gray-200'
                 }`}
               />
-              <span
-                className={`text-xs ${
-                  active ? "font-medium text-gray-900" : "text-gray-500"
-                }`}
-              >
+              <span className={`text-xs ${active ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
                 {label}
               </span>
             </li>
@@ -429,14 +418,13 @@ function Step1Form({ form }: FormProps) {
     setValue,
     formState: { errors },
   } = form;
-  const cv = watch("cv") as File | undefined;
+  const cv = watch('cv') as File | undefined;
   return (
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-bold text-gray-900">About you</h1>
         <p className="mt-1 text-gray-600">
-          Tell us what you're looking for so we can surface the most relevant
-          roles.
+          Tell us what you're looking for so we can surface the most relevant roles.
         </p>
       </header>
       <Field label="Target job title" error={errors.targetJobTitle?.message}>
@@ -446,7 +434,7 @@ function Step1Form({ form }: FormProps) {
             type="text"
             autoComplete="organization-title"
             placeholder="e.g. Senior Software Engineer"
-            {...register("targetJobTitle")}
+            {...register('targetJobTitle')}
             className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-navy-900 focus:outline-none focus:ring-1 focus:ring-navy-900"
           />
         )}
@@ -455,7 +443,7 @@ function Step1Form({ form }: FormProps) {
         {(id) => (
           <select
             id={id}
-            {...register("experienceLevel")}
+            {...register('experienceLevel')}
             className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-navy-900 focus:outline-none focus:ring-1 focus:ring-navy-900"
           >
             <option value="entry">Entry (0–2 years)</option>
@@ -471,7 +459,7 @@ function Step1Form({ form }: FormProps) {
         {(id) => (
           <select
             id={id}
-            {...register("jobSearchStatus")}
+            {...register('jobSearchStatus')}
             className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-navy-900 focus:outline-none focus:ring-1 focus:ring-navy-900"
           >
             <option value="actively_looking">Actively looking</option>
@@ -484,7 +472,7 @@ function Step1Form({ form }: FormProps) {
         {(id) => (
           <select
             id={id}
-            {...register("salaryRange")}
+            {...register('salaryRange')}
             className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-navy-900 focus:outline-none focus:ring-1 focus:ring-navy-900"
           >
             <option value="">Prefer not to say</option>
@@ -495,25 +483,20 @@ function Step1Form({ form }: FormProps) {
           </select>
         )}
       </Field>
-      <Field
-        label="Upload your CV (optional)"
-        error={errors.cv?.message as string | undefined}
-      >
+      <Field label="Upload your CV (optional)" error={errors.cv?.message as string | undefined}>
         {(id) => (
           <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4">
             {cv ? (
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-gray-900">
-                    {cv.name}
-                  </p>
+                  <p className="truncate text-sm font-medium text-gray-900">{cv.name}</p>
                   <p className="text-xs text-gray-500">
                     {(cv.size / 1024).toFixed(1)} KB · ready to upload
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setValue("cv", undefined, { shouldValidate: true })}
+                  onClick={() => setValue('cv', undefined, { shouldValidate: true })}
                   className="text-sm font-medium text-gray-600 hover:text-gray-900"
                 >
                   Remove
@@ -527,7 +510,7 @@ function Step1Form({ form }: FormProps) {
                   accept=".pdf,.doc,.docx,.rtf,.txt"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    setValue("cv", f ?? undefined, { shouldValidate: true });
+                    setValue('cv', f ?? undefined, { shouldValidate: true });
                   }}
                   className="sr-only"
                 />
@@ -535,33 +518,41 @@ function Step1Form({ form }: FormProps) {
                   htmlFor={id}
                   className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
                 >
-                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
                   </svg>
                   Choose file
                 </label>
-                <p className="mt-2 text-xs text-gray-500">
-                  PDF, DOCX, RTF, or TXT · up to 10 MB
-                </p>
+                <p className="mt-2 text-xs text-gray-500">PDF, DOCX, RTF, or TXT · up to 10 MB</p>
               </div>
             )}
           </div>
         )}
       </Field>
       <p className="text-xs text-gray-500">
-        Your CV is used to match you with relevant jobs. It's never shared
-        with employers without your action — every application goes through
-        you (or your agent, on Managed).
+        Your CV is used to match you with relevant jobs. It's never shared with employers without
+        your action — every application goes through you (or your agent, on Managed).
       </p>
       <label className="flex items-start gap-3 rounded-md border border-gray-200 p-3">
         <input
           type="checkbox"
-          {...register("wantsATSReport")}
+          {...register('wantsATSReport')}
           className="mt-0.5 h-4 w-4 rounded border-gray-300 text-navy-900 focus:ring-navy-900"
         />
         <span className="text-sm text-gray-700">
-          Email me a free resume score (ATS-compatibility check). We scan for
-          common formatting issues hiring software rejects.
+          Email me a free resume score (ATS-compatibility check). We scan for common formatting
+          issues hiring software rejects.
         </span>
       </label>
     </div>
@@ -575,42 +566,40 @@ function Step2Form({ form }: FormProps) {
     setValue,
     formState: { errors },
   } = form;
-  const selectedRegions = watch("preferredRegions");
-  const selectedTZ = watch("preferredTimezones");
-  const selectedLangs = watch("preferredLanguages");
-  const selectedJobTypes = watch("jobTypes");
-  const anywhereSelected = selectedRegions.includes("Anywhere");
+  const selectedRegions = watch('preferredRegions');
+  const selectedTZ = watch('preferredTimezones');
+  const selectedLangs = watch('preferredLanguages');
+  const selectedJobTypes = watch('jobTypes');
+  const anywhereSelected = selectedRegions.includes('Anywhere');
 
   function toggleLang(lang: string) {
     const on = selectedLangs.includes(lang);
     setValue(
-      "preferredLanguages",
+      'preferredLanguages',
       on ? selectedLangs.filter((x) => x !== lang) : [...selectedLangs, lang],
-      { shouldValidate: true },
+      { shouldValidate: true }
     );
   }
   function toggleJobType(t: string) {
     const on = selectedJobTypes.includes(t);
-    setValue(
-      "jobTypes",
-      on ? selectedJobTypes.filter((x) => x !== t) : [...selectedJobTypes, t],
-      { shouldValidate: true },
-    );
+    setValue('jobTypes', on ? selectedJobTypes.filter((x) => x !== t) : [...selectedJobTypes, t], {
+      shouldValidate: true,
+    });
   }
 
   function toggleRegion(r: string) {
-    if (r === "Anywhere") {
-      setValue("preferredRegions", anywhereSelected ? [] : ["Anywhere"], {
+    if (r === 'Anywhere') {
+      setValue('preferredRegions', anywhereSelected ? [] : ['Anywhere'], {
         shouldValidate: true,
       });
       return;
     }
-    const withoutAnywhere = selectedRegions.filter((x) => x !== "Anywhere");
+    const withoutAnywhere = selectedRegions.filter((x) => x !== 'Anywhere');
     const on = withoutAnywhere.includes(r);
     setValue(
-      "preferredRegions",
+      'preferredRegions',
       on ? withoutAnywhere.filter((x) => x !== r) : [...withoutAnywhere, r],
-      { shouldValidate: true },
+      { shouldValidate: true }
     );
   }
 
@@ -637,8 +626,8 @@ function Step2Form({ form }: FormProps) {
                   aria-pressed={on}
                   className={`min-h-[44px] rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                     on
-                      ? "border-navy-900 bg-navy-900 text-white"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                      ? 'border-navy-900 bg-navy-900 text-white'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   onClick={() => toggleRegion(r)}
                 >
@@ -661,15 +650,13 @@ function Step2Form({ form }: FormProps) {
                   aria-pressed={on}
                   className={`min-h-[44px] rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                     on
-                      ? "border-navy-900 bg-navy-900 text-white"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                      ? 'border-navy-900 bg-navy-900 text-white'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   onClick={() =>
                     setValue(
-                      "preferredTimezones",
-                      on
-                        ? selectedTZ.filter((x) => x !== tz)
-                        : [...selectedTZ, tz],
+                      'preferredTimezones',
+                      on ? selectedTZ.filter((x) => x !== tz) : [...selectedTZ, tz]
                     )
                   }
                 >
@@ -695,8 +682,8 @@ function Step2Form({ form }: FormProps) {
                   aria-pressed={on}
                   className={`min-h-[44px] rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                     on
-                      ? "border-navy-900 bg-navy-900 text-white"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                      ? 'border-navy-900 bg-navy-900 text-white'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   onClick={() => toggleLang(lang)}
                 >
@@ -707,10 +694,7 @@ function Step2Form({ form }: FormProps) {
           </div>
         )}
       </Field>
-      <Field
-        label="Job type"
-        error={errors.jobTypes?.message as string | undefined}
-      >
+      <Field label="Job type" error={errors.jobTypes?.message as string | undefined}>
         {() => (
           <div className="flex flex-wrap gap-2" role="group" aria-label="Job type">
             {JOB_TYPES.map((t) => {
@@ -722,8 +706,8 @@ function Step2Form({ form }: FormProps) {
                   aria-pressed={on}
                   className={`min-h-[44px] rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                     on
-                      ? "border-navy-900 bg-navy-900 text-white"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                      ? 'border-navy-900 bg-navy-900 text-white'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   onClick={() => toggleJobType(t)}
                 >
@@ -741,7 +725,7 @@ function Step2Form({ form }: FormProps) {
             type="text"
             autoComplete="country-name"
             placeholder="e.g. Kenya"
-            {...register("country")}
+            {...register('country')}
             className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-navy-900 focus:outline-none focus:ring-1 focus:ring-navy-900"
           />
         )}
@@ -757,15 +741,14 @@ function Step3Form({ form }: FormProps) {
     setValue,
     formState: { errors },
   } = form;
-  const plan = watch("plan");
+  const plan = watch('plan');
 
   return (
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-bold text-gray-900">Choose your plan</h1>
         <p className="mt-1 text-gray-600">
-          You can upgrade or cancel any time. All plans include weekly
-          matches to your inbox.
+          You can upgrade or cancel any time. All plans include weekly matches to your inbox.
         </p>
       </header>
 
@@ -781,20 +764,16 @@ function Step3Form({ form }: FormProps) {
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  onClick={() => setValue("plan", p.id, { shouldValidate: true })}
+                  onClick={() => setValue('plan', p.id, { shouldValidate: true })}
                   className={`flex flex-col items-start gap-1 rounded-lg border-2 p-4 text-left transition-colors ${
                     on
-                      ? "border-accent-500 bg-accent-50"
-                      : "border-gray-200 bg-white hover:border-gray-300"
+                      ? 'border-accent-500 bg-accent-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                 >
                   <div className="flex w-full items-center justify-between gap-2">
-                    <span className="text-base font-semibold text-gray-900">
-                      {p.name}
-                    </span>
-                    <span className="text-sm font-semibold text-gray-900">
-                      {priceLabel}
-                    </span>
+                    <span className="text-base font-semibold text-gray-900">{p.name}</span>
+                    <span className="text-sm font-semibold text-gray-900">{priceLabel}</span>
                   </div>
                   <p className="text-sm text-gray-600">{p.tagline}</p>
                   {p.matchesPerWeek !== null && (
@@ -819,16 +798,22 @@ function Step3Form({ form }: FormProps) {
           <label className="flex items-start gap-3">
             <input
               type="checkbox"
-              {...register("agreeTerms")}
+              {...register('agreeTerms')}
               className="mt-0.5 h-4 w-4 rounded border-gray-300 text-navy-900 focus:ring-navy-900"
             />
             <span className="text-sm text-gray-700">
-              I agree to the{" "}
-              <a href="/terms/" className="font-medium text-accent-600 underline hover:text-accent-700">
+              I agree to the{' '}
+              <a
+                href="/terms/"
+                className="font-medium text-accent-600 underline hover:text-accent-700"
+              >
                 Terms
-              </a>{" "}
-              and{" "}
-              <a href="/privacy/" className="font-medium text-accent-600 underline hover:text-accent-700">
+              </a>{' '}
+              and{' '}
+              <a
+                href="/privacy/"
+                className="font-medium text-accent-600 underline hover:text-accent-700"
+              >
                 Privacy Policy
               </a>
               .
@@ -838,8 +823,8 @@ function Step3Form({ form }: FormProps) {
       </Field>
 
       <p className="text-xs text-gray-500">
-        You'll be redirected to our payment partner to complete the
-        subscription. Cancel any time from your dashboard.
+        You'll be redirected to our payment partner to complete the subscription. Cancel any time
+        from your dashboard.
       </p>
     </div>
   );
@@ -862,7 +847,7 @@ function Field({
           {label}
         </label>
       )}
-      <div className={label ? "mt-1" : ""}>{children(id)}</div>
+      <div className={label ? 'mt-1' : ''}>{children(id)}</div>
       {error && (
         <p className="mt-1 text-sm text-red-600" role="alert">
           {error}

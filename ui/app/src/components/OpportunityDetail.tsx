@@ -1,16 +1,16 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchSnapshot } from "@/api/snapshot";
-import { pingJobView } from "@/api/views";
-import { categoryLabel, isoInPast, timeAgo } from "@/utils/format";
-import { useI18n } from "@/i18n/I18nProvider";
-import type { StringKey } from "@/i18n/strings";
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchSnapshot } from '@/api/snapshot';
+import { pingJobView } from '@/api/views';
+import { categoryLabel, isoInPast, timeAgo } from '@/utils/format';
+import { useI18n } from '@/i18n/I18nProvider';
+import type { StringKey } from '@/i18n/strings';
 import {
   setAnalyticsContext,
   trackApplyClick,
   trackJobView,
   trackJobViewEngaged,
-} from "@/analytics/posthog";
+} from '@/analytics/posthog';
 import {
   isDeal,
   isFunding,
@@ -19,45 +19,47 @@ import {
   isTender,
   type OpportunityKind,
   type OpportunitySnapshot,
-} from "@/types/snapshot";
+} from '@/types/snapshot';
 
-const JobBody = lazy(() => import("@/components/bodies/JobBody"));
-const ScholarshipBody = lazy(() => import("@/components/bodies/ScholarshipBody"));
-const TenderBody = lazy(() => import("@/components/bodies/TenderBody"));
-const DealBody = lazy(() => import("@/components/bodies/DealBody"));
-const FundingBody = lazy(() => import("@/components/bodies/FundingBody"));
+const JobBody = lazy(() => import('@/components/bodies/JobBody'));
+const ScholarshipBody = lazy(() => import('@/components/bodies/ScholarshipBody'));
+const TenderBody = lazy(() => import('@/components/bodies/TenderBody'));
+const DealBody = lazy(() => import('@/components/bodies/DealBody'));
+const FundingBody = lazy(() => import('@/components/bodies/FundingBody'));
 
 export default function OpportunityDetail() {
   const { lang, t } = useI18n();
 
   const route = (() => {
-    if (typeof window === "undefined") return null;
+    if (typeof window === 'undefined') return null;
     const m = window.location.pathname.match(/^\/([^/]+)\/([^/]+)\/?$/);
     if (!m) return null;
     return { prefix: m[1]!, slug: decodeURIComponent(m[2]!) };
   })();
 
   const q = useQuery({
-    queryKey: ["snapshot", route?.prefix, route?.slug, lang],
+    queryKey: ['snapshot', route?.prefix, route?.slug, lang],
     queryFn: () => fetchSnapshot(route!.slug, lang, route!.prefix),
     enabled: !!route,
     staleTime: 5 * 60_000,
   });
 
   const ldRef = useRef<HTMLScriptElement | null>(null);
-  const mountedAtRef = useRef<number>(typeof performance !== "undefined" ? performance.now() : Date.now());
+  const mountedAtRef = useRef<number>(
+    typeof performance !== 'undefined' ? performance.now() : Date.now()
+  );
 
   useEffect(() => {
     if (!q.data) return;
     const snap = q.data;
-    const sLang = snap.language ?? "";
+    const sLang = snap.language ?? '';
     const showNotice = !!sLang && sLang !== lang;
 
-    setAnalyticsContext("canonical_job_id", snap.id);
-    setAnalyticsContext("slug", snap.slug);
-    setAnalyticsContext("kind", snap.kind);
-    setAnalyticsContext("ui_language", lang);
-    setAnalyticsContext("snapshot_language", sLang);
+    setAnalyticsContext('canonical_job_id', snap.id);
+    setAnalyticsContext('slug', snap.slug);
+    setAnalyticsContext('kind', snap.kind);
+    setAnalyticsContext('ui_language', lang);
+    setAnalyticsContext('snapshot_language', sLang);
 
     trackJobView({
       canonical_job_id: snap.id,
@@ -68,23 +70,20 @@ export default function OpportunityDetail() {
       ui_language: lang,
       snapshot_language: sLang,
       translated_notice_shown: showNotice,
-      referrer: typeof document !== "undefined" ? document.referrer : "",
+      referrer: typeof document !== 'undefined' ? document.referrer : '',
     });
 
     void pingJobView(snap.slug);
 
     const engagedAt = setTimeout(() => {
       const dwell = Math.round(
-        (typeof performance !== "undefined" ? performance.now() : Date.now()) -
-          mountedAtRef.current,
+        (typeof performance !== 'undefined' ? performance.now() : Date.now()) - mountedAtRef.current
       );
-      const doc = typeof document !== "undefined" ? document.documentElement : null;
+      const doc = typeof document !== 'undefined' ? document.documentElement : null;
       const scrollPct = doc
         ? Math.min(
             100,
-            Math.round(
-              ((window.scrollY + window.innerHeight) / (doc.scrollHeight || 1)) * 100,
-            ),
+            Math.round(((window.scrollY + window.innerHeight) / (doc.scrollHeight || 1)) * 100)
           )
         : 0;
       trackJobViewEngaged({
@@ -101,8 +100,8 @@ export default function OpportunityDetail() {
   useEffect(() => {
     const el = ldRef.current;
     if (!el) return;
-    if (!q.data || q.data.kind !== "job") {
-      el.textContent = "";
+    if (!q.data || q.data.kind !== 'job') {
+      el.textContent = '';
       return;
     }
     el.textContent = JSON.stringify(buildJobPostingLd(q.data));
@@ -140,7 +139,7 @@ export default function OpportunityDetail() {
           className="mt-4 rounded-md border border-sky-200 bg-sky-50 px-4 py-2 text-sm text-sky-900"
           role="status"
         >
-          {t("job.translatedNotice")}
+          {t('job.translatedNotice')}
         </div>
       )}
 
@@ -157,11 +156,13 @@ export default function OpportunityDetail() {
             {snap.anchor_location?.country && <span>{snap.anchor_location.country}</span>}
             {snap.remote && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">
-                {t("job.remote")}
+                {t('job.remote')}
               </span>
             )}
             {snap.posted_at && (
-              <span className="text-gray-400">{t("job.postedOn")} {timeAgo(snap.posted_at)}</span>
+              <span className="text-gray-400">
+                {t('job.postedOn')} {timeAgo(snap.posted_at)}
+              </span>
             )}
             {snap.deadline && !expired && (
               <span className="text-orange-700">
@@ -170,9 +171,7 @@ export default function OpportunityDetail() {
             )}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            {canApply && (
-              <ApplyLink snap={snap} mountedAtRef={mountedAtRef} t={t} />
-            )}
+            {canApply && <ApplyLink snap={snap} mountedAtRef={mountedAtRef} t={t} />}
             <ShareButton title={snap.title} subtitle={snap.issuing_entity} t={t} />
           </div>
         </div>
@@ -210,9 +209,7 @@ function ApplyLink({
   t: (k: StringKey, fallback?: string) => string;
   large?: boolean;
 }) {
-  const className = large
-    ? "btn-primary px-8 py-3 text-base"
-    : "btn-primary";
+  const className = large ? 'btn-primary px-8 py-3 text-base' : 'btn-primary';
   return (
     <a
       href={snap.apply_url}
@@ -223,10 +220,10 @@ function ApplyLink({
           canonical_job_id: snap.id,
           slug: snap.slug,
           company: snap.issuing_entity,
-          apply_url: snap.apply_url ?? "",
+          apply_url: snap.apply_url ?? '',
           dwell_ms: Math.round(
-            (typeof performance !== "undefined" ? performance.now() : Date.now()) -
-              mountedAtRef.current,
+            (typeof performance !== 'undefined' ? performance.now() : Date.now()) -
+              mountedAtRef.current
           ),
         });
       }}
@@ -243,45 +240,70 @@ function ApplyLink({
   );
 }
 
-function applyCtaLabel(kind: OpportunityKind, t: (k: StringKey, fallback?: string) => string): string {
+function applyCtaLabel(
+  kind: OpportunityKind,
+  t: (k: StringKey, fallback?: string) => string
+): string {
   switch (kind) {
-    case "deal": return t("cta.redeemNow");
-    case "tender": return t("cta.submitBid");
-    case "scholarship":
-    case "funding":
-    case "job":
+    case 'deal':
+      return t('cta.redeemNow');
+    case 'tender':
+      return t('cta.submitBid');
+    case 'scholarship':
+    case 'funding':
+    case 'job':
     default:
-      return t("cta.applyNow");
+      return t('cta.applyNow');
   }
 }
 
-function deadlineLabel(kind: OpportunityKind, t: (k: StringKey, fallback?: string) => string): string {
+function deadlineLabel(
+  kind: OpportunityKind,
+  t: (k: StringKey, fallback?: string) => string
+): string {
   switch (kind) {
-    case "tender": return t("deadline.closes");
-    case "deal":   return t("deadline.expires");
-    default:       return t("deadline.applyBy");
+    case 'tender':
+      return t('deadline.closes');
+    case 'deal':
+      return t('deadline.expires');
+    default:
+      return t('deadline.applyBy');
   }
 }
 
-function expiredMessage(kind: OpportunityKind, t: (k: StringKey, fallback?: string) => string): string {
+function expiredMessage(
+  kind: OpportunityKind,
+  t: (k: StringKey, fallback?: string) => string
+): string {
   switch (kind) {
-    case "scholarship": return t("expired.scholarship");
-    case "tender":      return t("expired.tender");
-    case "deal":        return t("expired.deal");
-    case "funding":     return t("expired.funding");
-    case "job":
-    default:            return t("expired.job");
+    case 'scholarship':
+      return t('expired.scholarship');
+    case 'tender':
+      return t('expired.tender');
+    case 'deal':
+      return t('expired.deal');
+    case 'funding':
+      return t('expired.funding');
+    case 'job':
+    default:
+      return t('expired.job');
   }
 }
 
 function inferKindFromPrefix(prefix: string): OpportunityKind | undefined {
   switch (prefix) {
-    case "jobs":          return "job";
-    case "scholarships":  return "scholarship";
-    case "tenders":       return "tender";
-    case "deals":         return "deal";
-    case "funding":       return "funding";
-    default:              return undefined;
+    case 'jobs':
+      return 'job';
+    case 'scholarships':
+      return 'scholarship';
+    case 'tenders':
+      return 'tender';
+    case 'deals':
+      return 'deal';
+    case 'funding':
+      return 'funding';
+    default:
+      return undefined;
   }
 }
 
@@ -296,16 +318,17 @@ function Breadcrumbs({
 }) {
   return (
     <nav aria-label="Breadcrumb" className="text-sm text-gray-500">
-      <a href="/" className="hover:text-gray-700">{t("common.home")}</a>
+      <a href="/" className="hover:text-gray-700">
+        {t('common.home')}
+      </a>
       <span className="mx-1.5">/</span>
-      <a href={`/${prefix}/`} className="capitalize hover:text-gray-700">{prefix}</a>
+      <a href={`/${prefix}/`} className="capitalize hover:text-gray-700">
+        {prefix}
+      </a>
       {category && (
         <>
           <span className="mx-1.5">/</span>
-          <a
-            href={`/categories/${encodeURIComponent(category)}/`}
-            className="hover:text-gray-700"
-          >
+          <a href={`/categories/${encodeURIComponent(category)}/`} className="hover:text-gray-700">
             {categoryLabel(category)}
           </a>
         </>
@@ -315,9 +338,10 @@ function Breadcrumbs({
 }
 
 function IssuingEntityAvatar({ snap }: { snap: OpportunitySnapshot }) {
-  const logo = typeof snap.attributes?.logo_url === "string"
-    ? (snap.attributes.logo_url as string)
-    : undefined;
+  const logo =
+    typeof snap.attributes?.logo_url === 'string'
+      ? (snap.attributes.logo_url as string)
+      : undefined;
   if (logo) {
     return (
       <img
@@ -328,7 +352,7 @@ function IssuingEntityAvatar({ snap }: { snap: OpportunitySnapshot }) {
       />
     );
   }
-  const initial = (snap.issuing_entity || "?").trim().slice(0, 1).toUpperCase();
+  const initial = (snap.issuing_entity || '?').trim().slice(0, 1).toUpperCase();
   return (
     <div
       className="flex h-14 w-14 shrink-0 items-center justify-center rounded bg-navy-100 text-xl font-semibold text-navy-900"
@@ -348,7 +372,7 @@ function ShareButton({
   subtitle: string;
   t: (k: StringKey, fallback?: string) => string;
 }) {
-  const canShare = typeof navigator !== "undefined" && "share" in navigator;
+  const canShare = typeof navigator !== 'undefined' && 'share' in navigator;
   async function onClick() {
     const url = window.location.href;
     if (canShare) {
@@ -371,38 +395,48 @@ function ShareButton({
       onClick={onClick}
       className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
     >
-      <svg className="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+      <svg
+        className="mr-1.5 h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+        />
       </svg>
-      {canShare ? t("cta.share") : t("cta.copyLink")}
+      {canShare ? t('cta.share') : t('cta.copyLink')}
     </button>
   );
 }
 
 function buildJobPostingLd(snap: OpportunitySnapshot): Record<string, unknown> {
   const ld: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "JobPosting",
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
     title: snap.title,
     description: snap.description_html ?? snap.description,
     datePosted: snap.posted_at,
     validThrough: snap.expires_at ?? snap.deadline,
-    employmentType: typeof snap.attributes?.employment_type === "string"
-      ? snap.attributes.employment_type
-      : undefined,
-    hiringOrganization: {
-      "@type": "Organization",
-      name: snap.issuing_entity,
-      logo: typeof snap.attributes?.logo_url === "string"
-        ? snap.attributes.logo_url
+    employmentType:
+      typeof snap.attributes?.employment_type === 'string'
+        ? snap.attributes.employment_type
         : undefined,
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: snap.issuing_entity,
+      logo: typeof snap.attributes?.logo_url === 'string' ? snap.attributes.logo_url : undefined,
     },
   };
   if (snap.anchor_location) {
     ld.jobLocation = {
-      "@type": "Place",
+      '@type': 'Place',
       address: {
-        "@type": "PostalAddress",
+        '@type': 'PostalAddress',
         addressLocality: snap.anchor_location.city,
         addressRegion: snap.anchor_location.region,
         addressCountry: snap.anchor_location.country,
@@ -410,14 +444,15 @@ function buildJobPostingLd(snap: OpportunitySnapshot): Record<string, unknown> {
     };
   }
   if (snap.amount_min || snap.amount_max) {
-    const period = typeof snap.attributes?.salary_period === "string"
-      ? (snap.attributes.salary_period as string)
-      : "year";
+    const period =
+      typeof snap.attributes?.salary_period === 'string'
+        ? (snap.attributes.salary_period as string)
+        : 'year';
     ld.baseSalary = {
-      "@type": "MonetaryAmount",
-      currency: snap.currency || "USD",
+      '@type': 'MonetaryAmount',
+      currency: snap.currency || 'USD',
       value: {
-        "@type": "QuantitativeValue",
+        '@type': 'QuantitativeValue',
         minValue: snap.amount_min,
         maxValue: snap.amount_max,
         unitText: period.toUpperCase(),
@@ -457,19 +492,16 @@ function NotFound({
   kind: OpportunityKind | undefined;
   t: (k: StringKey, fallback?: string) => string;
 }) {
-  const label = kind ?? "opportunity";
-  const browseHref = kind ? `/${pluralForKind(kind)}/` : "/jobs/";
+  const label = kind ?? 'opportunity';
+  const browseHref = kind ? `/${pluralForKind(kind)}/` : '/jobs/';
   return (
     <div className="mx-auto max-w-md py-16 text-center">
-      <h1 className="text-2xl font-semibold text-gray-900 capitalize">{label} {t("error.notFound")}</h1>
-      <p className="mt-2 text-gray-600">
-        {t("error.listingRemoved")}
-      </p>
-      <a
-        href={browseHref}
-        className="btn-primary mt-6"
-      >
-        {t("cta.browseAll")}
+      <h1 className="text-2xl font-semibold text-gray-900 capitalize">
+        {label} {t('error.notFound')}
+      </h1>
+      <p className="mt-2 text-gray-600">{t('error.listingRemoved')}</p>
+      <a href={browseHref} className="btn-primary mt-6">
+        {t('cta.browseAll')}
       </a>
     </div>
   );
@@ -477,11 +509,16 @@ function NotFound({
 
 function pluralForKind(kind: OpportunityKind): string {
   switch (kind) {
-    case "job":         return "jobs";
-    case "scholarship": return "scholarships";
-    case "tender":      return "tenders";
-    case "deal":        return "deals";
-    case "funding":     return "funding";
+    case 'job':
+      return 'jobs';
+    case 'scholarship':
+      return 'scholarships';
+    case 'tender':
+      return 'tenders';
+    case 'deal':
+      return 'deals';
+    case 'funding':
+      return 'funding';
   }
 }
 
@@ -494,16 +531,10 @@ function LoadError({
 }) {
   return (
     <div className="mx-auto max-w-md py-16 text-center">
-      <h1 className="text-xl font-semibold text-gray-900">{t("error.somethingWrong")}</h1>
-      <p className="mt-2 text-gray-600">
-        {t("error.couldNotLoad")}
-      </p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="btn-primary mt-6"
-      >
-        {t("cta.tryAgain")}
+      <h1 className="text-xl font-semibold text-gray-900">{t('error.somethingWrong')}</h1>
+      <p className="mt-2 text-gray-600">{t('error.couldNotLoad')}</p>
+      <button type="button" onClick={onRetry} className="btn-primary mt-6">
+        {t('cta.tryAgain')}
       </button>
     </div>
   );

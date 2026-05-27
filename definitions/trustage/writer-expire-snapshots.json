@@ -13,7 +13,11 @@
       "type": "call",
       "name": "Invoke expire-snapshots",
       "timeout": "20m",
-      "retry": { "max_attempts": 2, "backoff_strategy": "exponential", "initial_backoff": "60s" },
+      "retry": {
+        "max_attempts": 2,
+        "backoff_strategy": "exponential",
+        "initial_backoff": "60s"
+      },
       "call": {
         "action": "http.request",
         "input": {
