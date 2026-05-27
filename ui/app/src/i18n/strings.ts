@@ -43,9 +43,7 @@ export const LANG_LABEL: Record<LangCode, string> = {
 export const RTL_LANGS = new Set<LangCode>(["ar"]);
 
 export interface Strings {
-  // nav.jobs is the single top-bar link post-redesign; the others
-  // stay typed because other components (old or future) still use
-  // them via useI18n.
+  // ---- Navigation ----
   "nav.jobs": string;
   "nav.findJobs": string;
   "nav.allJobs": string;
@@ -56,11 +54,26 @@ export interface Strings {
   "nav.language": string;
   "nav.categoriesHint": string;
 
+  // ---- Call-to-action buttons ----
   "cta.applyNow": string;
   "cta.saveJob": string;
   "cta.loadMore": string;
   "cta.subscribe": string;
+  "cta.redeemNow": string;
+  "cta.submitBid": string;
+  "cta.share": string;
+  "cta.copyLink": string;
+  "cta.browseAll": string;
+  "cta.tryAgain": string;
+  "cta.apply": string;
+  "cta.save": string;
+  "cta.saved": string;
+  "cta.cancel": string;
+  "cta.close": string;
+  "cta.dismiss": string;
+  "cta.retry": string;
 
+  // ---- Job detail ----
   "job.postedOn": string;
   "job.remote": string;
   "job.employmentType": string;
@@ -70,9 +83,179 @@ export interface Strings {
   "job.skillsNiceToHave": string;
   "job.translatedNotice": string;
 
+  // ---- Deadline labels ----
+  "deadline.closes": string;
+  "deadline.expires": string;
+  "deadline.applyBy": string;
+
+  // ---- Expired messages ----
+  "expired.scholarship": string;
+  "expired.tender": string;
+  "expired.deal": string;
+  "expired.funding": string;
+  "expired.job": string;
+
+  // ---- Errors & not-found ----
+  "error.notFound": string;
+  "error.listingRemoved": string;
+  "error.somethingWrong": string;
+  "error.couldNotLoad": string;
+  "error.categoryLoad": string;
+  "error.submitFlag": string;
+
+  // ---- Opportunity kind labels ----
+  "kind.job": string;
+  "kind.scholarship": string;
+  "kind.tender": string;
+  "kind.deal": string;
+  "kind.funding": string;
+
+  // ---- Common / reusable ----
+  "common.home": string;
+  "common.categories": string;
+  "common.jobs": string;
+  "common.loading": string;
+  "common.featured": string;
+
+  // ---- Scholarship ----
+  "scholarship.minGpa": string;
+  "scholarship.eligibleNationalities": string;
+
+  // ---- Tender ----
+  "tender.budget": string;
+  "tender.bidderEligibility": string;
+  "tender.submissionMethod": string;
+
+  // ---- Deal ----
+  "deal.percentOff": string;
+  "deal.couponCode": string;
+  "deal.redeemableIn": string;
+
+  // ---- Funding ----
+  "funding.grant": string;
+  "funding.orgEligibility": string;
+  "funding.targetRegions": string;
+
+  // ---- Search & filters ----
   "search.placeholder": string;
   "search.noResults": string;
+  "search.filters": string;
+  "search.clearAll": string;
+  "search.clear": string;
+  "search.showResults": string;
+  "search.category": string;
+  "search.remote": string;
+  "search.hybrid": string;
+  "search.onSite": string;
+  "search.employmentType": string;
+  "search.seniority": string;
+  "search.country": string;
+  "search.searchPlaceholder": string;
+  "search.searchButton": string;
+  "search.searchJobs": string;
+  "search.sort": string;
+  "search.sortRelevance": string;
+  "search.sortRecent": string;
+  "search.sortQuality": string;
+  "search.sortSalary": string;
+  "search.uncategorised": string;
 
+  // ---- Flag modal ----
+  "flag.trigger": string;
+  "flag.title": string;
+  "flag.scam": string;
+  "flag.expired": string;
+  "flag.duplicate": string;
+  "flag.spam": string;
+  "flag.other": string;
+  "flag.thankYou": string;
+  "flag.reason": string;
+  "flag.details": string;
+  "flag.detailsPlaceholder": string;
+  "flag.alreadyFlagged": string;
+  "flag.signInRequired": string;
+  "flag.submitting": string;
+  "flag.submitButton": string;
+
+  // ---- Stats ----
+  "stats.views": string;
+  "stats.applies": string;
+
+  // ---- Locale shard ----
+  "locale.showingJobs": string;
+
+  // ---- Category ----
+  "category.browseByCategory": string;
+  "category.noCategories": string;
+  "category.uncategorised": string;
+  "category.notFound": string;
+  "category.notFoundMessage": string;
+  "category.backToAll": string;
+  "category.latestRoles": string;
+  "category.noRolesOpen": string;
+  "category.browseAllJobs": string;
+
+  // ---- Opportunity card / status ----
+  "status.applied": string;
+  "status.responded": string;
+  "status.interview": string;
+  "status.offer": string;
+  "status.rejected": string;
+  "status.hired": string;
+  "card.match": string;
+
+  // ---- Cascade / feed ----
+  "cascade.yourPreferences": string;
+  "cascade.outside": string;
+  "cascade.worldwide": string;
+  "cascade.loadingMore": string;
+
+  // ---- Feed ----
+  "feed.all": string;
+  "feed.matches": string;
+  "feed.starred": string;
+  "feed.applied": string;
+  "feed.empty": string;
+  "feed.tryAllFilter": string;
+  "feed.loadError": string;
+
+  // ---- Dashboard ----
+  "dash.title": string;
+  "dash.setupIncomplete": string;
+  "dash.finishPayment": string;
+  "dash.browseJobs": string;
+  "dash.changePlan": string;
+  "dash.viewPlans": string;
+  "dash.actionNeeded": string;
+  "dash.choosePlan": string;
+  "dash.editPreferences": string;
+  "dash.paymentReceived": string;
+  "dash.paymentFailed": string;
+  "dash.paymentWaiting": string;
+  "dash.matchPreferences": string;
+  "dash.matchPreferencesHint": string;
+  "dash.saving": string;
+  "dash.preferencesSaved": string;
+  "dash.preferencesFailed": string;
+  "dash.billing": string;
+  "dash.active": string;
+  "dash.renewsOn": string;
+  "dash.changePlanOrCancel": string;
+  "dash.signInTitle": string;
+  "dash.signInHint": string;
+  "dash.yourAgent": string;
+  "dash.agentHint": string;
+  "dash.emailAgent": string;
+  "dash.scheduleCall": string;
+  "dash.paymentPastDue": string;
+  "dash.updatePayment": string;
+  "dash.subCancelled": string;
+  "dash.reactivateHint": string;
+  "dash.finishSetup": string;
+  "dash.matchingHint": string;
+  "dash.openingPayment": string;
+
+  // ---- Footer ----
   "footer.about": string;
   "footer.pricing": string;
   "footer.privacy": string;
@@ -81,6 +264,9 @@ export interface Strings {
   "footer.rights": string;
 }
 
+// ---------------------------------------------------------------------------
+// English (canonical)
+// ---------------------------------------------------------------------------
 const en: Strings = {
   "nav.jobs": "Jobs",
   "nav.findJobs": "Find Jobs",
@@ -96,6 +282,19 @@ const en: Strings = {
   "cta.saveJob": "Save job",
   "cta.loadMore": "Load more",
   "cta.subscribe": "Subscribe",
+  "cta.redeemNow": "Redeem now",
+  "cta.submitBid": "Submit bid",
+  "cta.share": "Share",
+  "cta.copyLink": "Copy link",
+  "cta.browseAll": "Browse all",
+  "cta.tryAgain": "Try again",
+  "cta.apply": "Apply",
+  "cta.save": "Save",
+  "cta.saved": "Saved",
+  "cta.cancel": "Cancel",
+  "cta.close": "Close",
+  "cta.dismiss": "Dismiss",
+  "cta.retry": "Retry",
 
   "job.postedOn": "Posted",
   "job.remote": "Remote",
@@ -106,8 +305,159 @@ const en: Strings = {
   "job.skillsNiceToHave": "Nice to have",
   "job.translatedNotice": "Automatically translated from the original posting.",
 
+  "deadline.closes": "Closes",
+  "deadline.expires": "Expires",
+  "deadline.applyBy": "Apply by",
+
+  "expired.scholarship": "This scholarship is no longer accepting applications.",
+  "expired.tender": "This tender's submission window has closed.",
+  "expired.deal": "This deal has expired.",
+  "expired.funding": "This funding opportunity is closed.",
+  "expired.job": "This job is no longer accepting applications.",
+
+  "error.notFound": "not found",
+  "error.listingRemoved": "This listing has been removed or has expired.",
+  "error.somethingWrong": "Something went wrong",
+  "error.couldNotLoad": "We couldn't load this listing right now.",
+  "error.categoryLoad": "We couldn't load this category.",
+  "error.submitFlag": "Could not submit flag:",
+
+  "kind.job": "Jobs",
+  "kind.scholarship": "Scholarships",
+  "kind.tender": "Tenders",
+  "kind.deal": "Deals",
+  "kind.funding": "Funding",
+
+  "common.home": "Home",
+  "common.categories": "Categories",
+  "common.jobs": "jobs",
+  "common.loading": "Loading…",
+  "common.featured": "Featured",
+
+  "scholarship.minGpa": "Minimum GPA",
+  "scholarship.eligibleNationalities": "Eligible nationalities",
+
+  "tender.budget": "Budget",
+  "tender.bidderEligibility": "Bidder eligibility",
+  "tender.submissionMethod": "Submission method",
+
+  "deal.percentOff": "% off",
+  "deal.couponCode": "Coupon code",
+  "deal.redeemableIn": "Redeemable in",
+
+  "funding.grant": "Grant",
+  "funding.orgEligibility": "Organisation eligibility",
+  "funding.targetRegions": "Target regions",
+
   "search.placeholder": "Search roles, companies, skills…",
   "search.noResults": "No jobs matched your search.",
+  "search.filters": "Filters",
+  "search.clearAll": "Clear all",
+  "search.clear": "Clear",
+  "search.showResults": "Show results",
+  "search.category": "Category",
+  "search.remote": "Remote",
+  "search.hybrid": "Hybrid",
+  "search.onSite": "On-site",
+  "search.employmentType": "Employment type",
+  "search.seniority": "Seniority",
+  "search.country": "Country",
+  "search.searchPlaceholder": "Search by title, skill, or company…",
+  "search.searchButton": "Search",
+  "search.searchJobs": "Search jobs",
+  "search.sort": "Sort",
+  "search.sortRelevance": "Relevance",
+  "search.sortRecent": "Most recent",
+  "search.sortQuality": "Highest quality",
+  "search.sortSalary": "Salary: high to low",
+  "search.uncategorised": "(uncategorised)",
+
+  "flag.trigger": "Flag this listing",
+  "flag.title": "Flag this listing",
+  "flag.scam": "Scam or phishing",
+  "flag.expired": "Expired or filled",
+  "flag.duplicate": "Duplicate listing",
+  "flag.spam": "Spam or low-quality",
+  "flag.other": "Other",
+  "flag.thankYou": "Thanks — your report has been recorded and will be reviewed by our moderators.",
+  "flag.reason": "Reason",
+  "flag.details": "Details (optional)",
+  "flag.detailsPlaceholder": "What looks wrong about this listing?",
+  "flag.alreadyFlagged": "You've already flagged this listing — thanks for keeping the site clean.",
+  "flag.signInRequired": "You need to be signed in to flag a listing.",
+  "flag.submitting": "Submitting…",
+  "flag.submitButton": "Submit flag",
+
+  "stats.views": "views",
+  "stats.applies": "applies",
+
+  "locale.showingJobs": "Showing {country} jobs{langs}.",
+
+  "category.browseByCategory": "Browse by category",
+  "category.noCategories": "No categories yet.",
+  "category.uncategorised": "Uncategorised",
+  "category.notFound": "Category not found",
+  "category.notFoundMessage": "That category doesn't exist (yet).",
+  "category.backToAll": "Back to all categories",
+  "category.latestRoles": "Latest roles in {category} — filtered by category and sorted by recency.",
+  "category.noRolesOpen": "No {category} roles are open right now.",
+  "category.browseAllJobs": "Browse all jobs →",
+
+  "status.applied": "Applied",
+  "status.responded": "Responded",
+  "status.interview": "Interview scheduled",
+  "status.offer": "Offer received",
+  "status.rejected": "Rejected",
+  "status.hired": "Hired",
+  "card.match": "% match",
+
+  "cascade.yourPreferences": "Your preferences",
+  "cascade.outside": "Outside {country}",
+  "cascade.worldwide": "Worldwide",
+  "cascade.loadingMore": "Loading more…",
+
+  "feed.all": "All",
+  "feed.matches": "Matches",
+  "feed.starred": "Starred",
+  "feed.applied": "Applied",
+  "feed.empty": "Nothing to show here yet.",
+  "feed.tryAllFilter": "Try the 'All' filter.",
+  "feed.loadError": "Couldn't load your opportunities.",
+
+  "dash.title": "Your dashboard",
+  "dash.setupIncomplete": "Setup incomplete",
+  "dash.finishPayment": "Finish payment to unlock matching.",
+  "dash.browseJobs": "Browse jobs",
+  "dash.changePlan": "Change plan",
+  "dash.viewPlans": "View plans",
+  "dash.actionNeeded": "Action needed",
+  "dash.choosePlan": "Choose a plan",
+  "dash.editPreferences": "Edit preferences",
+  "dash.paymentReceived": "Payment received — your subscription is now active.",
+  "dash.paymentFailed": "Payment didn't complete.",
+  "dash.paymentWaiting": "Waiting for your payment provider to confirm — this usually takes under a minute.",
+  "dash.matchPreferences": "Match preferences",
+  "dash.matchPreferencesHint": "Opt into the kinds of opportunities you want matched. We'll only run matchers for kinds you've configured.",
+  "dash.saving": "Saving…",
+  "dash.preferencesSaved": "Preferences saved.",
+  "dash.preferencesFailed": "Couldn't save preferences.",
+  "dash.billing": "Billing",
+  "dash.active": "Active",
+  "dash.renewsOn": "Renews on",
+  "dash.changePlanOrCancel": "Change plan or cancel →",
+  "dash.signInTitle": "Sign in to continue",
+  "dash.signInHint": "Your dashboard shows your plan, matches, and saved jobs.",
+  "dash.yourAgent": "Your agent",
+  "dash.agentHint": "Your personal recruiter for the duration of your search. Reach out any time and expect a same-day response.",
+  "dash.emailAgent": "Email",
+  "dash.scheduleCall": "Schedule a 1:1",
+  "dash.paymentPastDue": "Your last payment didn't go through",
+  "dash.updatePayment": "Update your payment details to resume matching.",
+  "dash.subCancelled": "Your subscription is cancelled",
+  "dash.reactivateHint": "Re-activate any time to start receiving matches again.",
+  "dash.finishSetup": "Finish setting up your {plan} plan",
+  "dash.matchingHint": "We'll only run our matching engine on your CV once a plan is active. It takes two minutes.",
+  "dash.openingPayment": "Opening payment…",
 
   "footer.about": "About",
   "footer.pricing": "Pricing",
@@ -117,6 +467,9 @@ const en: Strings = {
   "footer.rights": "All rights reserved.",
 };
 
+// ---------------------------------------------------------------------------
+// Spanish
+// ---------------------------------------------------------------------------
 const es: Strings = {
   "nav.jobs": "Empleos",
   "nav.findJobs": "Ofertas",
@@ -132,6 +485,19 @@ const es: Strings = {
   "cta.saveJob": "Guardar empleo",
   "cta.loadMore": "Cargar más",
   "cta.subscribe": "Suscribirse",
+  "cta.redeemNow": "Canjear ahora",
+  "cta.submitBid": "Enviar oferta",
+  "cta.share": "Compartir",
+  "cta.copyLink": "Copiar enlace",
+  "cta.browseAll": "Ver todo",
+  "cta.tryAgain": "Reintentar",
+  "cta.apply": "Postular",
+  "cta.save": "Guardar",
+  "cta.saved": "Guardado",
+  "cta.cancel": "Cancelar",
+  "cta.close": "Cerrar",
+  "cta.dismiss": "Descartar",
+  "cta.retry": "Reintentar",
 
   "job.postedOn": "Publicado",
   "job.remote": "Remoto",
@@ -142,8 +508,159 @@ const es: Strings = {
   "job.skillsNiceToHave": "Deseables",
   "job.translatedNotice": "Traducido automáticamente del anuncio original.",
 
+  "deadline.closes": "Cierra",
+  "deadline.expires": "Vence",
+  "deadline.applyBy": "Postular antes del",
+
+  "expired.scholarship": "Esta beca ya no acepta solicitudes.",
+  "expired.tender": "El plazo de esta licitación ha cerrado.",
+  "expired.deal": "Esta oferta ha expirado.",
+  "expired.funding": "Esta oportunidad de financiamiento está cerrada.",
+  "expired.job": "Este empleo ya no acepta solicitudes.",
+
+  "error.notFound": "no encontrado",
+  "error.listingRemoved": "Este anuncio ha sido eliminado o ha expirado.",
+  "error.somethingWrong": "Algo salió mal",
+  "error.couldNotLoad": "No pudimos cargar este anuncio.",
+  "error.categoryLoad": "No pudimos cargar esta categoría.",
+  "error.submitFlag": "No se pudo enviar el reporte:",
+
+  "kind.job": "Empleos",
+  "kind.scholarship": "Becas",
+  "kind.tender": "Licitaciones",
+  "kind.deal": "Ofertas",
+  "kind.funding": "Financiamiento",
+
+  "common.home": "Inicio",
+  "common.categories": "Categorías",
+  "common.jobs": "empleos",
+  "common.loading": "Cargando…",
+  "common.featured": "Destacado",
+
+  "scholarship.minGpa": "GPA mínimo",
+  "scholarship.eligibleNationalities": "Nacionalidades elegibles",
+
+  "tender.budget": "Presupuesto",
+  "tender.bidderEligibility": "Elegibilidad del oferente",
+  "tender.submissionMethod": "Método de envío",
+
+  "deal.percentOff": "% de descuento",
+  "deal.couponCode": "Código de cupón",
+  "deal.redeemableIn": "Canjeable en",
+
+  "funding.grant": "Subvención",
+  "funding.orgEligibility": "Elegibilidad de la organización",
+  "funding.targetRegions": "Regiones objetivo",
+
   "search.placeholder": "Busca roles, empresas, habilidades…",
   "search.noResults": "Ningún empleo coincide con tu búsqueda.",
+  "search.filters": "Filtros",
+  "search.clearAll": "Limpiar todo",
+  "search.clear": "Limpiar",
+  "search.showResults": "Mostrar resultados",
+  "search.category": "Categoría",
+  "search.remote": "Remoto",
+  "search.hybrid": "Híbrido",
+  "search.onSite": "Presencial",
+  "search.employmentType": "Tipo de empleo",
+  "search.seniority": "Nivel",
+  "search.country": "País",
+  "search.searchPlaceholder": "Buscar por título, habilidad o empresa…",
+  "search.searchButton": "Buscar",
+  "search.searchJobs": "Buscar empleos",
+  "search.sort": "Ordenar",
+  "search.sortRelevance": "Relevancia",
+  "search.sortRecent": "Más recientes",
+  "search.sortQuality": "Mayor calidad",
+  "search.sortSalary": "Salario: mayor a menor",
+  "search.uncategorised": "(sin categoría)",
+
+  "flag.trigger": "Reportar este anuncio",
+  "flag.title": "Reportar este anuncio",
+  "flag.scam": "Estafa o phishing",
+  "flag.expired": "Expirado o cubierto",
+  "flag.duplicate": "Anuncio duplicado",
+  "flag.spam": "Spam o baja calidad",
+  "flag.other": "Otro",
+  "flag.thankYou": "Gracias — tu reporte ha sido registrado y será revisado por nuestros moderadores.",
+  "flag.reason": "Motivo",
+  "flag.details": "Detalles (opcional)",
+  "flag.detailsPlaceholder": "¿Qué tiene de incorrecto este anuncio?",
+  "flag.alreadyFlagged": "Ya reportaste este anuncio — gracias por mantener el sitio limpio.",
+  "flag.signInRequired": "Debes iniciar sesión para reportar un anuncio.",
+  "flag.submitting": "Enviando…",
+  "flag.submitButton": "Enviar reporte",
+
+  "stats.views": "vistas",
+  "stats.applies": "postulaciones",
+
+  "locale.showingJobs": "Mostrando empleos en {country}{langs}.",
+
+  "category.browseByCategory": "Explorar por categoría",
+  "category.noCategories": "Aún no hay categorías.",
+  "category.uncategorised": "Sin categoría",
+  "category.notFound": "Categoría no encontrada",
+  "category.notFoundMessage": "Esa categoría no existe (aún).",
+  "category.backToAll": "Volver a todas las categorías",
+  "category.latestRoles": "Últimos roles en {category} — filtrados por categoría y ordenados por fecha.",
+  "category.noRolesOpen": "No hay roles de {category} abiertos en este momento.",
+  "category.browseAllJobs": "Ver todos los empleos →",
+
+  "status.applied": "Postulado",
+  "status.responded": "Respondido",
+  "status.interview": "Entrevista programada",
+  "status.offer": "Oferta recibida",
+  "status.rejected": "Rechazado",
+  "status.hired": "Contratado",
+  "card.match": "% coincidencia",
+
+  "cascade.yourPreferences": "Tus preferencias",
+  "cascade.outside": "Fuera de {country}",
+  "cascade.worldwide": "Mundial",
+  "cascade.loadingMore": "Cargando más…",
+
+  "feed.all": "Todas",
+  "feed.matches": "Coincidencias",
+  "feed.starred": "Favoritos",
+  "feed.applied": "Postulados",
+  "feed.empty": "Aún no hay nada que mostrar.",
+  "feed.tryAllFilter": "Prueba el filtro 'Todas'.",
+  "feed.loadError": "No pudimos cargar tus oportunidades.",
+
+  "dash.title": "Tu panel",
+  "dash.setupIncomplete": "Configuración incompleta",
+  "dash.finishPayment": "Completa el pago para activar el emparejamiento.",
+  "dash.browseJobs": "Explorar empleos",
+  "dash.changePlan": "Cambiar plan",
+  "dash.viewPlans": "Ver planes",
+  "dash.actionNeeded": "Acción requerida",
+  "dash.choosePlan": "Elige un plan",
+  "dash.editPreferences": "Editar preferencias",
+  "dash.paymentReceived": "Pago recibido — tu suscripción ya está activa.",
+  "dash.paymentFailed": "El pago no se completó.",
+  "dash.paymentWaiting": "Esperando confirmación de tu proveedor de pago — suele tardar menos de un minuto.",
+  "dash.matchPreferences": "Preferencias de emparejamiento",
+  "dash.matchPreferencesHint": "Activa los tipos de oportunidades que deseas recibir. Solo ejecutaremos los emparejadores para los tipos que hayas configurado.",
+  "dash.saving": "Guardando…",
+  "dash.preferencesSaved": "Preferencias guardadas.",
+  "dash.preferencesFailed": "No se pudieron guardar las preferencias.",
+  "dash.billing": "Facturación",
+  "dash.active": "Activo",
+  "dash.renewsOn": "Se renueva el",
+  "dash.changePlanOrCancel": "Cambiar plan o cancelar →",
+  "dash.signInTitle": "Inicia sesión para continuar",
+  "dash.signInHint": "Tu panel muestra tu plan, coincidencias y empleos guardados.",
+  "dash.yourAgent": "Tu agente",
+  "dash.agentHint": "Tu reclutador personal durante toda tu búsqueda. Escríbele cuando quieras y espera una respuesta el mismo día.",
+  "dash.emailAgent": "Correo electrónico",
+  "dash.scheduleCall": "Agendar una llamada 1:1",
+  "dash.paymentPastDue": "Tu último pago no se procesó",
+  "dash.updatePayment": "Actualiza tus datos de pago para reanudar el emparejamiento.",
+  "dash.subCancelled": "Tu suscripción está cancelada",
+  "dash.reactivateHint": "Reactívala en cualquier momento para volver a recibir coincidencias.",
+  "dash.finishSetup": "Termina de configurar tu plan {plan}",
+  "dash.matchingHint": "Solo ejecutaremos nuestro motor de emparejamiento con tu CV cuando tengas un plan activo. Tarda dos minutos.",
+  "dash.openingPayment": "Abriendo pago…",
 
   "footer.about": "Nosotros",
   "footer.pricing": "Precios",
@@ -153,6 +670,9 @@ const es: Strings = {
   "footer.rights": "Todos los derechos reservados.",
 };
 
+// ---------------------------------------------------------------------------
+// French
+// ---------------------------------------------------------------------------
 const fr: Strings = {
   "nav.jobs": "Emplois",
   "nav.findJobs": "Offres",
@@ -168,6 +688,19 @@ const fr: Strings = {
   "cta.saveJob": "Enregistrer",
   "cta.loadMore": "Voir plus",
   "cta.subscribe": "S'abonner",
+  "cta.redeemNow": "Utiliser maintenant",
+  "cta.submitBid": "Soumettre une offre",
+  "cta.share": "Partager",
+  "cta.copyLink": "Copier le lien",
+  "cta.browseAll": "Tout parcourir",
+  "cta.tryAgain": "Réessayer",
+  "cta.apply": "Postuler",
+  "cta.save": "Enregistrer",
+  "cta.saved": "Enregistré",
+  "cta.cancel": "Annuler",
+  "cta.close": "Fermer",
+  "cta.dismiss": "Ignorer",
+  "cta.retry": "Réessayer",
 
   "job.postedOn": "Publié le",
   "job.remote": "Télétravail",
@@ -178,8 +711,159 @@ const fr: Strings = {
   "job.skillsNiceToHave": "Atouts",
   "job.translatedNotice": "Traduit automatiquement de l'offre originale.",
 
+  "deadline.closes": "Clôture le",
+  "deadline.expires": "Expire le",
+  "deadline.applyBy": "Postuler avant le",
+
+  "expired.scholarship": "Cette bourse n'accepte plus de candidatures.",
+  "expired.tender": "La période de soumission de cet appel d'offres est terminée.",
+  "expired.deal": "Cette offre a expiré.",
+  "expired.funding": "Cette opportunité de financement est clôturée.",
+  "expired.job": "Cette offre d'emploi n'accepte plus de candidatures.",
+
+  "error.notFound": "introuvable",
+  "error.listingRemoved": "Cette annonce a été supprimée ou a expiré.",
+  "error.somethingWrong": "Une erreur est survenue",
+  "error.couldNotLoad": "Impossible de charger cette annonce.",
+  "error.categoryLoad": "Impossible de charger cette catégorie.",
+  "error.submitFlag": "Impossible d'envoyer le signalement :",
+
+  "kind.job": "Emplois",
+  "kind.scholarship": "Bourses",
+  "kind.tender": "Appels d'offres",
+  "kind.deal": "Bons plans",
+  "kind.funding": "Financements",
+
+  "common.home": "Accueil",
+  "common.categories": "Catégories",
+  "common.jobs": "emplois",
+  "common.loading": "Chargement…",
+  "common.featured": "En vedette",
+
+  "scholarship.minGpa": "Moyenne minimale",
+  "scholarship.eligibleNationalities": "Nationalités éligibles",
+
+  "tender.budget": "Budget",
+  "tender.bidderEligibility": "Éligibilité des soumissionnaires",
+  "tender.submissionMethod": "Méthode de soumission",
+
+  "deal.percentOff": "% de réduction",
+  "deal.couponCode": "Code promo",
+  "deal.redeemableIn": "Utilisable en",
+
+  "funding.grant": "Subvention",
+  "funding.orgEligibility": "Éligibilité des organisations",
+  "funding.targetRegions": "Régions ciblées",
+
   "search.placeholder": "Recherchez un poste, une entreprise, une compétence…",
   "search.noResults": "Aucune offre ne correspond à votre recherche.",
+  "search.filters": "Filtres",
+  "search.clearAll": "Tout effacer",
+  "search.clear": "Effacer",
+  "search.showResults": "Afficher les résultats",
+  "search.category": "Catégorie",
+  "search.remote": "Télétravail",
+  "search.hybrid": "Hybride",
+  "search.onSite": "Sur site",
+  "search.employmentType": "Type de contrat",
+  "search.seniority": "Niveau",
+  "search.country": "Pays",
+  "search.searchPlaceholder": "Rechercher par titre, compétence ou entreprise…",
+  "search.searchButton": "Rechercher",
+  "search.searchJobs": "Rechercher des emplois",
+  "search.sort": "Trier",
+  "search.sortRelevance": "Pertinence",
+  "search.sortRecent": "Plus récentes",
+  "search.sortQuality": "Meilleure qualité",
+  "search.sortSalary": "Salaire : décroissant",
+  "search.uncategorised": "(sans catégorie)",
+
+  "flag.trigger": "Signaler cette annonce",
+  "flag.title": "Signaler cette annonce",
+  "flag.scam": "Arnaque ou hameçonnage",
+  "flag.expired": "Expiré ou pourvu",
+  "flag.duplicate": "Annonce en double",
+  "flag.spam": "Spam ou faible qualité",
+  "flag.other": "Autre",
+  "flag.thankYou": "Merci — votre signalement a été enregistré et sera examiné par nos modérateurs.",
+  "flag.reason": "Motif",
+  "flag.details": "Détails (facultatif)",
+  "flag.detailsPlaceholder": "Qu'est-ce qui semble incorrect dans cette annonce ?",
+  "flag.alreadyFlagged": "Vous avez déjà signalé cette annonce — merci de contribuer à la qualité du site.",
+  "flag.signInRequired": "Vous devez être connecté pour signaler une annonce.",
+  "flag.submitting": "Envoi…",
+  "flag.submitButton": "Envoyer le signalement",
+
+  "stats.views": "vues",
+  "stats.applies": "candidatures",
+
+  "locale.showingJobs": "Affichage des emplois en {country}{langs}.",
+
+  "category.browseByCategory": "Parcourir par catégorie",
+  "category.noCategories": "Aucune catégorie pour le moment.",
+  "category.uncategorised": "Non catégorisé",
+  "category.notFound": "Catégorie introuvable",
+  "category.notFoundMessage": "Cette catégorie n'existe pas (encore).",
+  "category.backToAll": "Retour à toutes les catégories",
+  "category.latestRoles": "Dernières offres en {category} — filtrées par catégorie et triées par date.",
+  "category.noRolesOpen": "Aucun poste de {category} n'est ouvert actuellement.",
+  "category.browseAllJobs": "Voir toutes les offres →",
+
+  "status.applied": "Postulé",
+  "status.responded": "Répondu",
+  "status.interview": "Entretien programmé",
+  "status.offer": "Offre reçue",
+  "status.rejected": "Refusé",
+  "status.hired": "Embauché",
+  "card.match": "% correspondance",
+
+  "cascade.yourPreferences": "Vos préférences",
+  "cascade.outside": "Hors de {country}",
+  "cascade.worldwide": "Mondial",
+  "cascade.loadingMore": "Chargement…",
+
+  "feed.all": "Tout",
+  "feed.matches": "Correspondances",
+  "feed.starred": "Favoris",
+  "feed.applied": "Postulé",
+  "feed.empty": "Rien à afficher pour le moment.",
+  "feed.tryAllFilter": "Essayez le filtre « Tout ».",
+  "feed.loadError": "Impossible de charger vos opportunités.",
+
+  "dash.title": "Votre tableau de bord",
+  "dash.setupIncomplete": "Configuration incomplète",
+  "dash.finishPayment": "Finalisez le paiement pour activer le matching.",
+  "dash.browseJobs": "Parcourir les offres",
+  "dash.changePlan": "Changer de plan",
+  "dash.viewPlans": "Voir les plans",
+  "dash.actionNeeded": "Action requise",
+  "dash.choosePlan": "Choisir un plan",
+  "dash.editPreferences": "Modifier les préférences",
+  "dash.paymentReceived": "Paiement reçu — votre abonnement est maintenant actif.",
+  "dash.paymentFailed": "Le paiement n'a pas abouti.",
+  "dash.paymentWaiting": "En attente de confirmation de votre prestataire de paiement — cela prend généralement moins d'une minute.",
+  "dash.matchPreferences": "Préférences de matching",
+  "dash.matchPreferencesHint": "Activez les types d'opportunités que vous souhaitez recevoir. Nous n'exécuterons les algorithmes que pour les types que vous avez configurés.",
+  "dash.saving": "Enregistrement…",
+  "dash.preferencesSaved": "Préférences enregistrées.",
+  "dash.preferencesFailed": "Impossible d'enregistrer les préférences.",
+  "dash.billing": "Facturation",
+  "dash.active": "Actif",
+  "dash.renewsOn": "Renouvellement le",
+  "dash.changePlanOrCancel": "Changer de plan ou résilier →",
+  "dash.signInTitle": "Connectez-vous pour continuer",
+  "dash.signInHint": "Votre tableau de bord affiche votre plan, vos correspondances et vos offres enregistrées.",
+  "dash.yourAgent": "Votre agent",
+  "dash.agentHint": "Votre recruteur personnel pendant toute la durée de votre recherche. Contactez-le à tout moment et attendez une réponse dans la journée.",
+  "dash.emailAgent": "E-mail",
+  "dash.scheduleCall": "Planifier un appel 1:1",
+  "dash.paymentPastDue": "Votre dernier paiement n'a pas été traité",
+  "dash.updatePayment": "Mettez à jour vos coordonnées de paiement pour reprendre le matching.",
+  "dash.subCancelled": "Votre abonnement est résilié",
+  "dash.reactivateHint": "Réactivez-le à tout moment pour recommencer à recevoir des correspondances.",
+  "dash.finishSetup": "Terminez la configuration de votre plan {plan}",
+  "dash.matchingHint": "Nous n'exécuterons notre moteur de matching sur votre CV qu'une fois un plan actif. Cela prend deux minutes.",
+  "dash.openingPayment": "Ouverture du paiement…",
 
   "footer.about": "À propos",
   "footer.pricing": "Tarifs",
@@ -189,6 +873,9 @@ const fr: Strings = {
   "footer.rights": "Tous droits réservés.",
 };
 
+// ---------------------------------------------------------------------------
+// German
+// ---------------------------------------------------------------------------
 const de: Strings = {
   "nav.jobs": "Stellen",
   "nav.findJobs": "Stellen",
@@ -204,6 +891,19 @@ const de: Strings = {
   "cta.saveJob": "Merken",
   "cta.loadMore": "Mehr laden",
   "cta.subscribe": "Abonnieren",
+  "cta.redeemNow": "Jetzt einlösen",
+  "cta.submitBid": "Angebot abgeben",
+  "cta.share": "Teilen",
+  "cta.copyLink": "Link kopieren",
+  "cta.browseAll": "Alle durchsuchen",
+  "cta.tryAgain": "Erneut versuchen",
+  "cta.apply": "Bewerben",
+  "cta.save": "Speichern",
+  "cta.saved": "Gespeichert",
+  "cta.cancel": "Abbrechen",
+  "cta.close": "Schließen",
+  "cta.dismiss": "Ausblenden",
+  "cta.retry": "Wiederholen",
 
   "job.postedOn": "Veröffentlicht",
   "job.remote": "Remote",
@@ -214,8 +914,159 @@ const de: Strings = {
   "job.skillsNiceToHave": "Von Vorteil",
   "job.translatedNotice": "Automatisch aus der Originalanzeige übersetzt.",
 
+  "deadline.closes": "Endet am",
+  "deadline.expires": "Läuft ab am",
+  "deadline.applyBy": "Bewerben bis",
+
+  "expired.scholarship": "Dieses Stipendium nimmt keine Bewerbungen mehr an.",
+  "expired.tender": "Die Einreichungsfrist dieser Ausschreibung ist abgelaufen.",
+  "expired.deal": "Dieses Angebot ist abgelaufen.",
+  "expired.funding": "Diese Fördermöglichkeit ist geschlossen.",
+  "expired.job": "Diese Stelle nimmt keine Bewerbungen mehr an.",
+
+  "error.notFound": "nicht gefunden",
+  "error.listingRemoved": "Dieses Inserat wurde entfernt oder ist abgelaufen.",
+  "error.somethingWrong": "Etwas ist schiefgelaufen",
+  "error.couldNotLoad": "Dieses Inserat konnte nicht geladen werden.",
+  "error.categoryLoad": "Diese Kategorie konnte nicht geladen werden.",
+  "error.submitFlag": "Meldung konnte nicht gesendet werden:",
+
+  "kind.job": "Stellen",
+  "kind.scholarship": "Stipendien",
+  "kind.tender": "Ausschreibungen",
+  "kind.deal": "Angebote",
+  "kind.funding": "Förderungen",
+
+  "common.home": "Startseite",
+  "common.categories": "Kategorien",
+  "common.jobs": "Stellen",
+  "common.loading": "Laden…",
+  "common.featured": "Empfohlen",
+
+  "scholarship.minGpa": "Mindest-GPA",
+  "scholarship.eligibleNationalities": "Berechtigte Nationalitäten",
+
+  "tender.budget": "Budget",
+  "tender.bidderEligibility": "Bieterberechtigung",
+  "tender.submissionMethod": "Einreichungsweg",
+
+  "deal.percentOff": "% Rabatt",
+  "deal.couponCode": "Gutscheincode",
+  "deal.redeemableIn": "Einlösbar in",
+
+  "funding.grant": "Zuschuss",
+  "funding.orgEligibility": "Organisationsberechtigung",
+  "funding.targetRegions": "Zielregionen",
+
   "search.placeholder": "Suche nach Rollen, Unternehmen, Fähigkeiten…",
   "search.noResults": "Keine Stellen entsprechen deiner Suche.",
+  "search.filters": "Filter",
+  "search.clearAll": "Alles löschen",
+  "search.clear": "Löschen",
+  "search.showResults": "Ergebnisse anzeigen",
+  "search.category": "Kategorie",
+  "search.remote": "Remote",
+  "search.hybrid": "Hybrid",
+  "search.onSite": "Vor Ort",
+  "search.employmentType": "Beschäftigungsart",
+  "search.seniority": "Erfahrungsstufe",
+  "search.country": "Land",
+  "search.searchPlaceholder": "Suche nach Titel, Fähigkeit oder Unternehmen…",
+  "search.searchButton": "Suchen",
+  "search.searchJobs": "Stellen suchen",
+  "search.sort": "Sortieren",
+  "search.sortRelevance": "Relevanz",
+  "search.sortRecent": "Neueste",
+  "search.sortQuality": "Beste Qualität",
+  "search.sortSalary": "Gehalt: absteigend",
+  "search.uncategorised": "(ohne Kategorie)",
+
+  "flag.trigger": "Inserat melden",
+  "flag.title": "Inserat melden",
+  "flag.scam": "Betrug oder Phishing",
+  "flag.expired": "Abgelaufen oder besetzt",
+  "flag.duplicate": "Doppeltes Inserat",
+  "flag.spam": "Spam oder minderwertig",
+  "flag.other": "Sonstiges",
+  "flag.thankYou": "Danke — deine Meldung wurde erfasst und wird von unseren Moderatoren geprüft.",
+  "flag.reason": "Grund",
+  "flag.details": "Details (optional)",
+  "flag.detailsPlaceholder": "Was stimmt nicht mit diesem Inserat?",
+  "flag.alreadyFlagged": "Du hast dieses Inserat bereits gemeldet — danke für deinen Beitrag.",
+  "flag.signInRequired": "Du musst angemeldet sein, um ein Inserat zu melden.",
+  "flag.submitting": "Wird gesendet…",
+  "flag.submitButton": "Meldung absenden",
+
+  "stats.views": "Aufrufe",
+  "stats.applies": "Bewerbungen",
+
+  "locale.showingJobs": "Stellen in {country}{langs} werden angezeigt.",
+
+  "category.browseByCategory": "Nach Kategorie durchsuchen",
+  "category.noCategories": "Noch keine Kategorien.",
+  "category.uncategorised": "Ohne Kategorie",
+  "category.notFound": "Kategorie nicht gefunden",
+  "category.notFoundMessage": "Diese Kategorie existiert (noch) nicht.",
+  "category.backToAll": "Zurück zu allen Kategorien",
+  "category.latestRoles": "Neueste Stellen in {category} — nach Kategorie gefiltert und nach Datum sortiert.",
+  "category.noRolesOpen": "Derzeit sind keine {category}-Stellen offen.",
+  "category.browseAllJobs": "Alle Stellen durchsuchen →",
+
+  "status.applied": "Beworben",
+  "status.responded": "Geantwortet",
+  "status.interview": "Vorstellungsgespräch geplant",
+  "status.offer": "Angebot erhalten",
+  "status.rejected": "Abgelehnt",
+  "status.hired": "Eingestellt",
+  "card.match": "% Übereinstimmung",
+
+  "cascade.yourPreferences": "Deine Präferenzen",
+  "cascade.outside": "Außerhalb von {country}",
+  "cascade.worldwide": "Weltweit",
+  "cascade.loadingMore": "Mehr laden…",
+
+  "feed.all": "Alle",
+  "feed.matches": "Treffer",
+  "feed.starred": "Gemerkt",
+  "feed.applied": "Beworben",
+  "feed.empty": "Hier gibt es noch nichts zu sehen.",
+  "feed.tryAllFilter": "Versuche den Filter „Alle“.",
+  "feed.loadError": "Deine Chancen konnten nicht geladen werden.",
+
+  "dash.title": "Dein Dashboard",
+  "dash.setupIncomplete": "Einrichtung unvollständig",
+  "dash.finishPayment": "Schließe die Zahlung ab, um das Matching zu aktivieren.",
+  "dash.browseJobs": "Stellen durchsuchen",
+  "dash.changePlan": "Plan ändern",
+  "dash.viewPlans": "Pläne ansehen",
+  "dash.actionNeeded": "Handlung erforderlich",
+  "dash.choosePlan": "Wähle einen Plan",
+  "dash.editPreferences": "Präferenzen bearbeiten",
+  "dash.paymentReceived": "Zahlung erhalten — dein Abonnement ist jetzt aktiv.",
+  "dash.paymentFailed": "Die Zahlung wurde nicht abgeschlossen.",
+  "dash.paymentWaiting": "Wir warten auf die Bestätigung deines Zahlungsanbieters — das dauert in der Regel weniger als eine Minute.",
+  "dash.matchPreferences": "Matching-Präferenzen",
+  "dash.matchPreferencesHint": "Aktiviere die Arten von Chancen, die du empfangen möchtest. Wir führen Matcher nur für die von dir konfigurierten Arten aus.",
+  "dash.saving": "Wird gespeichert…",
+  "dash.preferencesSaved": "Präferenzen gespeichert.",
+  "dash.preferencesFailed": "Präferenzen konnten nicht gespeichert werden.",
+  "dash.billing": "Abrechnung",
+  "dash.active": "Aktiv",
+  "dash.renewsOn": "Verlängert sich am",
+  "dash.changePlanOrCancel": "Plan ändern oder kündigen →",
+  "dash.signInTitle": "Melde dich an, um fortzufahren",
+  "dash.signInHint": "Dein Dashboard zeigt deinen Plan, Übereinstimmungen und gespeicherte Stellen.",
+  "dash.yourAgent": "Dein Agent",
+  "dash.agentHint": "Dein persönlicher Recruiter für die Dauer deiner Suche. Melde dich jederzeit und erwarte eine Antwort am selben Tag.",
+  "dash.emailAgent": "E-Mail",
+  "dash.scheduleCall": "1:1-Gespräch planen",
+  "dash.paymentPastDue": "Deine letzte Zahlung wurde nicht verarbeitet",
+  "dash.updatePayment": "Aktualisiere deine Zahlungsdaten, um das Matching fortzusetzen.",
+  "dash.subCancelled": "Dein Abonnement ist gekündigt",
+  "dash.reactivateHint": "Reaktiviere es jederzeit, um wieder Übereinstimmungen zu erhalten.",
+  "dash.finishSetup": "Schließe die Einrichtung deines {plan}-Plans ab",
+  "dash.matchingHint": "Wir führen unser Matching erst aus, wenn ein Plan aktiv ist. Es dauert zwei Minuten.",
+  "dash.openingPayment": "Zahlung wird geöffnet…",
 
   "footer.about": "Über uns",
   "footer.pricing": "Preise",
@@ -225,6 +1076,9 @@ const de: Strings = {
   "footer.rights": "Alle Rechte vorbehalten.",
 };
 
+// ---------------------------------------------------------------------------
+// Portuguese
+// ---------------------------------------------------------------------------
 const pt: Strings = {
   "nav.jobs": "Vagas",
   "nav.findJobs": "Vagas",
@@ -240,6 +1094,19 @@ const pt: Strings = {
   "cta.saveJob": "Salvar vaga",
   "cta.loadMore": "Carregar mais",
   "cta.subscribe": "Assinar",
+  "cta.redeemNow": "Resgatar agora",
+  "cta.submitBid": "Enviar proposta",
+  "cta.share": "Compartilhar",
+  "cta.copyLink": "Copiar link",
+  "cta.browseAll": "Ver tudo",
+  "cta.tryAgain": "Tentar novamente",
+  "cta.apply": "Candidatar-se",
+  "cta.save": "Salvar",
+  "cta.saved": "Salvo",
+  "cta.cancel": "Cancelar",
+  "cta.close": "Fechar",
+  "cta.dismiss": "Dispensar",
+  "cta.retry": "Tentar novamente",
 
   "job.postedOn": "Publicada em",
   "job.remote": "Remoto",
@@ -250,8 +1117,159 @@ const pt: Strings = {
   "job.skillsNiceToHave": "Diferenciais",
   "job.translatedNotice": "Traduzido automaticamente do anúncio original.",
 
+  "deadline.closes": "Encerra em",
+  "deadline.expires": "Expira em",
+  "deadline.applyBy": "Candidatar até",
+
+  "expired.scholarship": "Esta bolsa não aceita mais candidaturas.",
+  "expired.tender": "O prazo de submissão desta licitação foi encerrado.",
+  "expired.deal": "Esta oferta expirou.",
+  "expired.funding": "Esta oportunidade de financiamento está encerrada.",
+  "expired.job": "Esta vaga não aceita mais candidaturas.",
+
+  "error.notFound": "não encontrado",
+  "error.listingRemoved": "Este anúncio foi removido ou expirou.",
+  "error.somethingWrong": "Algo deu errado",
+  "error.couldNotLoad": "Não foi possível carregar este anúncio.",
+  "error.categoryLoad": "Não foi possível carregar esta categoria.",
+  "error.submitFlag": "Não foi possível enviar o reporte:",
+
+  "kind.job": "Vagas",
+  "kind.scholarship": "Bolsas",
+  "kind.tender": "Licitações",
+  "kind.deal": "Ofertas",
+  "kind.funding": "Financiamentos",
+
+  "common.home": "Início",
+  "common.categories": "Categorias",
+  "common.jobs": "vagas",
+  "common.loading": "Carregando…",
+  "common.featured": "Destaque",
+
+  "scholarship.minGpa": "GPA mínimo",
+  "scholarship.eligibleNationalities": "Nacionalidades elegíveis",
+
+  "tender.budget": "Orçamento",
+  "tender.bidderEligibility": "Elegibilidade do licitante",
+  "tender.submissionMethod": "Método de submissão",
+
+  "deal.percentOff": "% de desconto",
+  "deal.couponCode": "Código do cupom",
+  "deal.redeemableIn": "Resgatável em",
+
+  "funding.grant": "Subvenção",
+  "funding.orgEligibility": "Elegibilidade da organização",
+  "funding.targetRegions": "Regiões-alvo",
+
   "search.placeholder": "Busque cargos, empresas, habilidades…",
   "search.noResults": "Nenhuma vaga encontrada.",
+  "search.filters": "Filtros",
+  "search.clearAll": "Limpar tudo",
+  "search.clear": "Limpar",
+  "search.showResults": "Mostrar resultados",
+  "search.category": "Categoria",
+  "search.remote": "Remoto",
+  "search.hybrid": "Híbrido",
+  "search.onSite": "Presencial",
+  "search.employmentType": "Tipo de contrato",
+  "search.seniority": "Nível",
+  "search.country": "País",
+  "search.searchPlaceholder": "Buscar por título, habilidade ou empresa…",
+  "search.searchButton": "Buscar",
+  "search.searchJobs": "Buscar vagas",
+  "search.sort": "Ordenar",
+  "search.sortRelevance": "Relevância",
+  "search.sortRecent": "Mais recentes",
+  "search.sortQuality": "Melhor qualidade",
+  "search.sortSalary": "Salário: maior para menor",
+  "search.uncategorised": "(sem categoria)",
+
+  "flag.trigger": "Denunciar este anúncio",
+  "flag.title": "Denunciar este anúncio",
+  "flag.scam": "Golpe ou phishing",
+  "flag.expired": "Expirado ou preenchido",
+  "flag.duplicate": "Anúncio duplicado",
+  "flag.spam": "Spam ou baixa qualidade",
+  "flag.other": "Outro",
+  "flag.thankYou": "Obrigado — sua denúncia foi registrada e será analisada por nossos moderadores.",
+  "flag.reason": "Motivo",
+  "flag.details": "Detalhes (opcional)",
+  "flag.detailsPlaceholder": "O que parece errado neste anúncio?",
+  "flag.alreadyFlagged": "Você já denunciou este anúncio — obrigado por manter o site limpo.",
+  "flag.signInRequired": "Você precisa estar logado para denunciar um anúncio.",
+  "flag.submitting": "Enviando…",
+  "flag.submitButton": "Enviar denúncia",
+
+  "stats.views": "visualizações",
+  "stats.applies": "candidaturas",
+
+  "locale.showingJobs": "Exibindo vagas em {country}{langs}.",
+
+  "category.browseByCategory": "Explorar por categoria",
+  "category.noCategories": "Nenhuma categoria ainda.",
+  "category.uncategorised": "Sem categoria",
+  "category.notFound": "Categoria não encontrada",
+  "category.notFoundMessage": "Essa categoria não existe (ainda).",
+  "category.backToAll": "Voltar para todas as categorias",
+  "category.latestRoles": "Últimas vagas em {category} — filtradas por categoria e ordenadas por data.",
+  "category.noRolesOpen": "Não há vagas de {category} abertas no momento.",
+  "category.browseAllJobs": "Ver todas as vagas →",
+
+  "status.applied": "Candidatado",
+  "status.responded": "Respondido",
+  "status.interview": "Entrevista agendada",
+  "status.offer": "Oferta recebida",
+  "status.rejected": "Rejeitado",
+  "status.hired": "Contratado",
+  "card.match": "% compatível",
+
+  "cascade.yourPreferences": "Suas preferências",
+  "cascade.outside": "Fora de {country}",
+  "cascade.worldwide": "Mundial",
+  "cascade.loadingMore": "Carregando mais…",
+
+  "feed.all": "Todas",
+  "feed.matches": "Compatíveis",
+  "feed.starred": "Favoritas",
+  "feed.applied": "Candidatadas",
+  "feed.empty": "Nada para mostrar por enquanto.",
+  "feed.tryAllFilter": "Experimente o filtro 'Todas'.",
+  "feed.loadError": "Não foi possível carregar suas oportunidades.",
+
+  "dash.title": "Seu painel",
+  "dash.setupIncomplete": "Configuração incompleta",
+  "dash.finishPayment": "Conclua o pagamento para ativar o matching.",
+  "dash.browseJobs": "Explorar vagas",
+  "dash.changePlan": "Alterar plano",
+  "dash.viewPlans": "Ver planos",
+  "dash.actionNeeded": "Ação necessária",
+  "dash.choosePlan": "Escolha um plano",
+  "dash.editPreferences": "Editar preferências",
+  "dash.paymentReceived": "Pagamento recebido — sua assinatura está ativa.",
+  "dash.paymentFailed": "O pagamento não foi concluído.",
+  "dash.paymentWaiting": "Aguardando confirmação do seu provedor de pagamento — isso geralmente leva menos de um minuto.",
+  "dash.matchPreferences": "Preferências de matching",
+  "dash.matchPreferencesHint": "Ative os tipos de oportunidades que deseja receber. Só executaremos os matchers para os tipos que você configurou.",
+  "dash.saving": "Salvando…",
+  "dash.preferencesSaved": "Preferências salvas.",
+  "dash.preferencesFailed": "Não foi possível salvar as preferências.",
+  "dash.billing": "Faturamento",
+  "dash.active": "Ativo",
+  "dash.renewsOn": "Renova em",
+  "dash.changePlanOrCancel": "Alterar plano ou cancelar →",
+  "dash.signInTitle": "Entre para continuar",
+  "dash.signInHint": "Seu painel mostra seu plano, compatibilidades e vagas salvas.",
+  "dash.yourAgent": "Seu agente",
+  "dash.agentHint": "Seu recrutador pessoal durante toda a sua busca. Entre em contato a qualquer momento e espere uma resposta no mesmo dia.",
+  "dash.emailAgent": "E-mail",
+  "dash.scheduleCall": "Agendar uma conversa 1:1",
+  "dash.paymentPastDue": "Seu último pagamento não foi processado",
+  "dash.updatePayment": "Atualize seus dados de pagamento para retomar o matching.",
+  "dash.subCancelled": "Sua assinatura está cancelada",
+  "dash.reactivateHint": "Reative a qualquer momento para voltar a receber compatibilidades.",
+  "dash.finishSetup": "Conclua a configuração do seu plano {plan}",
+  "dash.matchingHint": "Só executaremos nosso motor de matching no seu CV quando um plano estiver ativo. Leva dois minutos.",
+  "dash.openingPayment": "Abrindo pagamento…",
 
   "footer.about": "Sobre",
   "footer.pricing": "Planos",
@@ -261,6 +1279,9 @@ const pt: Strings = {
   "footer.rights": "Todos os direitos reservados.",
 };
 
+// ---------------------------------------------------------------------------
+// Japanese
+// ---------------------------------------------------------------------------
 const ja: Strings = {
   "nav.jobs": "求人",
   "nav.findJobs": "求人",
@@ -276,6 +1297,19 @@ const ja: Strings = {
   "cta.saveJob": "保存",
   "cta.loadMore": "もっと見る",
   "cta.subscribe": "登録する",
+  "cta.redeemNow": "今すぐ利用",
+  "cta.submitBid": "入札する",
+  "cta.share": "共有",
+  "cta.copyLink": "リンクをコピー",
+  "cta.browseAll": "すべてを見る",
+  "cta.tryAgain": "再試行",
+  "cta.apply": "応募",
+  "cta.save": "保存",
+  "cta.saved": "保存済み",
+  "cta.cancel": "キャンセル",
+  "cta.close": "閉じる",
+  "cta.dismiss": "非表示",
+  "cta.retry": "再試行",
 
   "job.postedOn": "掲載日",
   "job.remote": "リモート",
@@ -286,8 +1320,159 @@ const ja: Strings = {
   "job.skillsNiceToHave": "歓迎スキル",
   "job.translatedNotice": "元の求人情報から自動翻訳されました。",
 
+  "deadline.closes": "締切",
+  "deadline.expires": "有効期限",
+  "deadline.applyBy": "応募期限",
+
+  "expired.scholarship": "この奨学金の募集は終了しました。",
+  "expired.tender": "この入札の受付期間は終了しました。",
+  "expired.deal": "このディールは終了しました。",
+  "expired.funding": "この助成金の募集は終了しました。",
+  "expired.job": "この求人の募集は終了しました。",
+
+  "error.notFound": "が見つかりません",
+  "error.listingRemoved": "この掲載は削除されたか、有効期限が切れています。",
+  "error.somethingWrong": "エラーが発生しました",
+  "error.couldNotLoad": "この掲載を読み込めませんでした。",
+  "error.categoryLoad": "このカテゴリを読み込めませんでした。",
+  "error.submitFlag": "報告を送信できませんでした：",
+
+  "kind.job": "求人",
+  "kind.scholarship": "奨学金",
+  "kind.tender": "入札案件",
+  "kind.deal": "セール",
+  "kind.funding": "助成金",
+
+  "common.home": "ホーム",
+  "common.categories": "カテゴリ",
+  "common.jobs": "件",
+  "common.loading": "読み込み中…",
+  "common.featured": "注目",
+
+  "scholarship.minGpa": "最低GPA",
+  "scholarship.eligibleNationalities": "対象国籍",
+
+  "tender.budget": "予算",
+  "tender.bidderEligibility": "入札者資格",
+  "tender.submissionMethod": "提出方法",
+
+  "deal.percentOff": "%オフ",
+  "deal.couponCode": "クーポンコード",
+  "deal.redeemableIn": "利用可能地域",
+
+  "funding.grant": "助成金",
+  "funding.orgEligibility": "組織の応募資格",
+  "funding.targetRegions": "対象地域",
+
   "search.placeholder": "職種・企業・スキルで検索…",
   "search.noResults": "該当する求人が見つかりませんでした。",
+  "search.filters": "フィルター",
+  "search.clearAll": "すべてクリア",
+  "search.clear": "クリア",
+  "search.showResults": "結果を表示",
+  "search.category": "カテゴリ",
+  "search.remote": "リモート",
+  "search.hybrid": "ハイブリッド",
+  "search.onSite": "オンサイト",
+  "search.employmentType": "雇用形態",
+  "search.seniority": "経験レベル",
+  "search.country": "国",
+  "search.searchPlaceholder": "タイトル、スキル、企業名で検索…",
+  "search.searchButton": "検索",
+  "search.searchJobs": "求人を検索",
+  "search.sort": "並び替え",
+  "search.sortRelevance": "関連度",
+  "search.sortRecent": "新しい順",
+  "search.sortQuality": "品質順",
+  "search.sortSalary": "給与：高い順",
+  "search.uncategorised": "（未分類）",
+
+  "flag.trigger": "この掲載を報告",
+  "flag.title": "この掲載を報告",
+  "flag.scam": "詐欺またはフィッシング",
+  "flag.expired": "期限切れまたは募集終了",
+  "flag.duplicate": "重複した掲載",
+  "flag.spam": "スパムまたは低品質",
+  "flag.other": "その他",
+  "flag.thankYou": "ありがとうございます。報告は記録され、モデレーターが確認します。",
+  "flag.reason": "理由",
+  "flag.details": "詳細（任意）",
+  "flag.detailsPlaceholder": "この掲載のどこが問題ですか？",
+  "flag.alreadyFlagged": "この掲載は既に報告済みです。サイトの品質維持にご協力いただきありがとうございます。",
+  "flag.signInRequired": "掲載を報告するにはログインが必要です。",
+  "flag.submitting": "送信中…",
+  "flag.submitButton": "報告を送信",
+
+  "stats.views": "閲覧",
+  "stats.applies": "応募",
+
+  "locale.showingJobs": "{country}の求人{langs}を表示中。",
+
+  "category.browseByCategory": "カテゴリで探す",
+  "category.noCategories": "カテゴリはまだありません。",
+  "category.uncategorised": "未分類",
+  "category.notFound": "カテゴリが見つかりません",
+  "category.notFoundMessage": "そのカテゴリは（まだ）存在しません。",
+  "category.backToAll": "すべてのカテゴリに戻る",
+  "category.latestRoles": "{category}の最新求人 — カテゴリでフィルタリングし、日付順に表示。",
+  "category.noRolesOpen": "現在{category}の募集はありません。",
+  "category.browseAllJobs": "すべての求人を見る →",
+
+  "status.applied": "応募済み",
+  "status.responded": "返信あり",
+  "status.interview": "面接予定",
+  "status.offer": "内定",
+  "status.rejected": "不採用",
+  "status.hired": "採用",
+  "card.match": "%マッチ",
+
+  "cascade.yourPreferences": "あなたの希望条件",
+  "cascade.outside": "{country}以外",
+  "cascade.worldwide": "世界中",
+  "cascade.loadingMore": "読み込み中…",
+
+  "feed.all": "すべて",
+  "feed.matches": "マッチ",
+  "feed.starred": "お気に入り",
+  "feed.applied": "応募済み",
+  "feed.empty": "まだ表示するものがありません。",
+  "feed.tryAllFilter": "「すべて」フィルターをお試しください。",
+  "feed.loadError": "求人情報を読み込めませんでした。",
+
+  "dash.title": "ダッシュボード",
+  "dash.setupIncomplete": "設定が未完了です",
+  "dash.finishPayment": "お支払いを完了してマッチングを有効にしてください。",
+  "dash.browseJobs": "求人を閲覧",
+  "dash.changePlan": "プランを変更",
+  "dash.viewPlans": "プランを見る",
+  "dash.actionNeeded": "対応が必要です",
+  "dash.choosePlan": "プランを選択",
+  "dash.editPreferences": "希望条件を編集",
+  "dash.paymentReceived": "お支払いを確認しました — サブスクリプションが有効になりました。",
+  "dash.paymentFailed": "お支払いが完了しませんでした。",
+  "dash.paymentWaiting": "決済プロバイダーの確認を待っています — 通常1分以内に完了します。",
+  "dash.matchPreferences": "マッチング設定",
+  "dash.matchPreferencesHint": "受け取りたい求人の種類を選択してください。設定された種類のみマッチングを実行します。",
+  "dash.saving": "保存中…",
+  "dash.preferencesSaved": "設定を保存しました。",
+  "dash.preferencesFailed": "設定を保存できませんでした。",
+  "dash.billing": "お支払い",
+  "dash.active": "有効",
+  "dash.renewsOn": "更新日",
+  "dash.changePlanOrCancel": "プラン変更または解約 →",
+  "dash.signInTitle": "ログインしてください",
+  "dash.signInHint": "ダッシュボードではプラン、マッチ結果、保存した求人を確認できます。",
+  "dash.yourAgent": "あなたの担当エージェント",
+  "dash.agentHint": "就職活動中ずっとサポートする専任リクルーターです。いつでもご連絡ください。当日中にお返事します。",
+  "dash.emailAgent": "メール",
+  "dash.scheduleCall": "1対1の面談を予約",
+  "dash.paymentPastDue": "前回のお支払いが処理されませんでした",
+  "dash.updatePayment": "お支払い情報を更新してマッチングを再開してください。",
+  "dash.subCancelled": "サブスクリプションは解約済みです",
+  "dash.reactivateHint": "いつでも再開してマッチングを再び受け取れます。",
+  "dash.finishSetup": "{plan}プランの設定を完了してください",
+  "dash.matchingHint": "プランが有効になってから、あなたの履歴書でマッチングエンジンを実行します。所要時間は2分です。",
+  "dash.openingPayment": "決済画面を開いています…",
 
   "footer.about": "会社概要",
   "footer.pricing": "料金",
@@ -297,6 +1482,9 @@ const ja: Strings = {
   "footer.rights": "All rights reserved.",
 };
 
+// ---------------------------------------------------------------------------
+// Arabic
+// ---------------------------------------------------------------------------
 const ar: Strings = {
   "nav.jobs": "وظائف",
   "nav.findJobs": "الوظائف",
@@ -312,6 +1500,19 @@ const ar: Strings = {
   "cta.saveJob": "حفظ الوظيفة",
   "cta.loadMore": "عرض المزيد",
   "cta.subscribe": "اشترك",
+  "cta.redeemNow": "استرد الآن",
+  "cta.submitBid": "تقديم عرض",
+  "cta.share": "مشاركة",
+  "cta.copyLink": "نسخ الرابط",
+  "cta.browseAll": "تصفح الكل",
+  "cta.tryAgain": "حاول مجدداً",
+  "cta.apply": "تقديم",
+  "cta.save": "حفظ",
+  "cta.saved": "محفوظ",
+  "cta.cancel": "إلغاء",
+  "cta.close": "إغلاق",
+  "cta.dismiss": "تجاهل",
+  "cta.retry": "إعادة المحاولة",
 
   "job.postedOn": "نُشرت في",
   "job.remote": "عن بُعد",
@@ -322,8 +1523,159 @@ const ar: Strings = {
   "job.skillsNiceToHave": "مهارات إضافية",
   "job.translatedNotice": "تمت الترجمة تلقائيًا من الإعلان الأصلي.",
 
+  "deadline.closes": "يُغلق في",
+  "deadline.expires": "ينتهي في",
+  "deadline.applyBy": "التقديم قبل",
+
+  "expired.scholarship": "لم تعد هذه المنحة تقبل طلبات.",
+  "expired.tender": "انتهت فترة تقديم هذا المناقصة.",
+  "expired.deal": "انتهت صلاحية هذا العرض.",
+  "expired.funding": "تم إغلاق فرصة التمويل هذه.",
+  "expired.job": "لم تعد هذه الوظيفة تقبل طلبات.",
+
+  "error.notFound": "غير موجود",
+  "error.listingRemoved": "تمت إزالة هذا الإعلان أو انتهت صلاحيته.",
+  "error.somethingWrong": "حدث خطأ ما",
+  "error.couldNotLoad": "تعذر تحميل هذا الإعلان حالياً.",
+  "error.categoryLoad": "تعذر تحميل هذه الفئة.",
+  "error.submitFlag": "تعذر إرسال البلاغ:",
+
+  "kind.job": "وظائف",
+  "kind.scholarship": "منح دراسية",
+  "kind.tender": "مناقصات",
+  "kind.deal": "عروض",
+  "kind.funding": "تمويل",
+
+  "common.home": "الرئيسية",
+  "common.categories": "الفئات",
+  "common.jobs": "وظائف",
+  "common.loading": "جارٍ التحميل…",
+  "common.featured": "مميز",
+
+  "scholarship.minGpa": "الحد الأدنى للمعدل",
+  "scholarship.eligibleNationalities": "الجنسيات المؤهلة",
+
+  "tender.budget": "الميزانية",
+  "tender.bidderEligibility": "أهلية المتقدم",
+  "tender.submissionMethod": "طريقة التقديم",
+
+  "deal.percentOff": "% خصم",
+  "deal.couponCode": "رمز القسيمة",
+  "deal.redeemableIn": "قابل للاسترداد في",
+
+  "funding.grant": "المنحة",
+  "funding.orgEligibility": "أهلية المنظمة",
+  "funding.targetRegions": "المناطق المستهدفة",
+
   "search.placeholder": "ابحث عن وظائف وشركات ومهارات…",
   "search.noResults": "لا توجد وظائف مطابقة.",
+  "search.filters": "التصفية",
+  "search.clearAll": "مسح الكل",
+  "search.clear": "مسح",
+  "search.showResults": "عرض النتائج",
+  "search.category": "الفئة",
+  "search.remote": "عن بُعد",
+  "search.hybrid": "هجين",
+  "search.onSite": "في الموقع",
+  "search.employmentType": "نوع الوظيفة",
+  "search.seniority": "المستوى",
+  "search.country": "البلد",
+  "search.searchPlaceholder": "ابحث بالمسمى أو المهارة أو الشركة…",
+  "search.searchButton": "بحث",
+  "search.searchJobs": "البحث عن وظائف",
+  "search.sort": "ترتيب",
+  "search.sortRelevance": "الأكثر صلة",
+  "search.sortRecent": "الأحدث",
+  "search.sortQuality": "الأعلى جودة",
+  "search.sortSalary": "الراتب: من الأعلى",
+  "search.uncategorised": "(بدون تصنيف)",
+
+  "flag.trigger": "الإبلاغ عن هذا الإعلان",
+  "flag.title": "الإبلاغ عن هذا الإعلان",
+  "flag.scam": "احتيال أو تصيد",
+  "flag.expired": "منتهي أو مشغول",
+  "flag.duplicate": "إعلان مكرر",
+  "flag.spam": "بريد عشوائي أو جودة منخفضة",
+  "flag.other": "أخرى",
+  "flag.thankYou": "شكراً — تم تسجيل بلاغك وسيتم مراجعته من قبل فريق الإشراف.",
+  "flag.reason": "السبب",
+  "flag.details": "تفاصيل (اختياري)",
+  "flag.detailsPlaceholder": "ما المشكلة في هذا الإعلان؟",
+  "flag.alreadyFlagged": "لقد أبلغت عن هذا الإعلان سابقاً — شكراً لمساعدتك في الحفاظ على جودة الموقع.",
+  "flag.signInRequired": "يجب تسجيل الدخول للإبلاغ عن إعلان.",
+  "flag.submitting": "جارٍ الإرسال…",
+  "flag.submitButton": "إرسال البلاغ",
+
+  "stats.views": "مشاهدة",
+  "stats.applies": "تقديم",
+
+  "locale.showingJobs": "عرض وظائف {country}{langs}.",
+
+  "category.browseByCategory": "تصفح حسب الفئة",
+  "category.noCategories": "لا توجد فئات بعد.",
+  "category.uncategorised": "بدون تصنيف",
+  "category.notFound": "الفئة غير موجودة",
+  "category.notFoundMessage": "هذه الفئة غير موجودة (حتى الآن).",
+  "category.backToAll": "العودة لجميع الفئات",
+  "category.latestRoles": "أحدث الوظائف في {category} — مُصفاة حسب الفئة ومرتبة حسب التاريخ.",
+  "category.noRolesOpen": "لا توجد وظائف مفتوحة في {category} حالياً.",
+  "category.browseAllJobs": "تصفح جميع الوظائف ←",
+
+  "status.applied": "تم التقديم",
+  "status.responded": "تم الرد",
+  "status.interview": "مقابلة مجدولة",
+  "status.offer": "عرض مستلم",
+  "status.rejected": "مرفوض",
+  "status.hired": "تم التوظيف",
+  "card.match": "% تطابق",
+
+  "cascade.yourPreferences": "تفضيلاتك",
+  "cascade.outside": "خارج {country}",
+  "cascade.worldwide": "عالمي",
+  "cascade.loadingMore": "جارٍ تحميل المزيد…",
+
+  "feed.all": "الكل",
+  "feed.matches": "المتطابقة",
+  "feed.starred": "المفضلة",
+  "feed.applied": "المُقدَّم عليها",
+  "feed.empty": "لا يوجد شيء لعرضه بعد.",
+  "feed.tryAllFilter": "جرّب فلتر \"الكل\".",
+  "feed.loadError": "تعذر تحميل فرصك.",
+
+  "dash.title": "لوحة التحكم",
+  "dash.setupIncomplete": "الإعداد غير مكتمل",
+  "dash.finishPayment": "أكمل الدفع لتفعيل المطابقة.",
+  "dash.browseJobs": "تصفح الوظائف",
+  "dash.changePlan": "تغيير الخطة",
+  "dash.viewPlans": "عرض الخطط",
+  "dash.actionNeeded": "إجراء مطلوب",
+  "dash.choosePlan": "اختر خطة",
+  "dash.editPreferences": "تعديل التفضيلات",
+  "dash.paymentReceived": "تم استلام الدفعة — اشتراكك نشط الآن.",
+  "dash.paymentFailed": "لم يكتمل الدفع.",
+  "dash.paymentWaiting": "بانتظار تأكيد مزود الدفع — عادةً ما يستغرق أقل من دقيقة.",
+  "dash.matchPreferences": "تفضيلات المطابقة",
+  "dash.matchPreferencesHint": "فعّل أنواع الفرص التي تريد مطابقتها. لن نشغّل المطابقة إلا للأنواع التي قمت بتهيئتها.",
+  "dash.saving": "جارٍ الحفظ…",
+  "dash.preferencesSaved": "تم حفظ التفضيلات.",
+  "dash.preferencesFailed": "تعذر حفظ التفضيلات.",
+  "dash.billing": "الفوترة",
+  "dash.active": "نشط",
+  "dash.renewsOn": "يُجدد في",
+  "dash.changePlanOrCancel": "تغيير الخطة أو الإلغاء ←",
+  "dash.signInTitle": "سجّل الدخول للمتابعة",
+  "dash.signInHint": "تعرض لوحة التحكم خطتك ونتائج المطابقة والوظائف المحفوظة.",
+  "dash.yourAgent": "وكيلك",
+  "dash.agentHint": "مسؤول التوظيف الشخصي طوال فترة بحثك. تواصل معه في أي وقت وتوقع رداً في نفس اليوم.",
+  "dash.emailAgent": "البريد الإلكتروني",
+  "dash.scheduleCall": "حجز مكالمة فردية",
+  "dash.paymentPastDue": "لم تتم معالجة دفعتك الأخيرة",
+  "dash.updatePayment": "حدّث بيانات الدفع لاستئناف المطابقة.",
+  "dash.subCancelled": "اشتراكك ملغى",
+  "dash.reactivateHint": "أعد التفعيل في أي وقت لبدء استلام نتائج المطابقة مجدداً.",
+  "dash.finishSetup": "أكمل إعداد خطة {plan}",
+  "dash.matchingHint": "لن نشغّل محرك المطابقة على سيرتك الذاتية إلا عند تفعيل خطة. يستغرق الأمر دقيقتين.",
+  "dash.openingPayment": "جارٍ فتح صفحة الدفع…",
 
   "footer.about": "من نحن",
   "footer.pricing": "الأسعار",
@@ -333,6 +1685,9 @@ const ar: Strings = {
   "footer.rights": "جميع الحقوق محفوظة.",
 };
 
+// ---------------------------------------------------------------------------
+// Chinese (Simplified)
+// ---------------------------------------------------------------------------
 const zh: Strings = {
   "nav.jobs": "职位",
   "nav.findJobs": "招聘",
@@ -348,6 +1703,19 @@ const zh: Strings = {
   "cta.saveJob": "收藏职位",
   "cta.loadMore": "加载更多",
   "cta.subscribe": "订阅",
+  "cta.redeemNow": "立即兑换",
+  "cta.submitBid": "提交投标",
+  "cta.share": "分享",
+  "cta.copyLink": "复制链接",
+  "cta.browseAll": "浏览全部",
+  "cta.tryAgain": "重试",
+  "cta.apply": "申请",
+  "cta.save": "收藏",
+  "cta.saved": "已收藏",
+  "cta.cancel": "取消",
+  "cta.close": "关闭",
+  "cta.dismiss": "忽略",
+  "cta.retry": "重试",
 
   "job.postedOn": "发布时间",
   "job.remote": "远程",
@@ -358,8 +1726,159 @@ const zh: Strings = {
   "job.skillsNiceToHave": "加分项",
   "job.translatedNotice": "此内容由原始职位自动翻译。",
 
+  "deadline.closes": "截止",
+  "deadline.expires": "到期",
+  "deadline.applyBy": "申请截止",
+
+  "expired.scholarship": "该奖学金已停止接受申请。",
+  "expired.tender": "该招标的提交窗口已关闭。",
+  "expired.deal": "该优惠已过期。",
+  "expired.funding": "该资助机会已关闭。",
+  "expired.job": "该职位已停止接受申请。",
+
+  "error.notFound": "未找到",
+  "error.listingRemoved": "该信息已被删除或已过期。",
+  "error.somethingWrong": "出了点问题",
+  "error.couldNotLoad": "暂时无法加载该信息。",
+  "error.categoryLoad": "无法加载该分类。",
+  "error.submitFlag": "无法提交举报：",
+
+  "kind.job": "职位",
+  "kind.scholarship": "奖学金",
+  "kind.tender": "招标",
+  "kind.deal": "优惠",
+  "kind.funding": "资助",
+
+  "common.home": "首页",
+  "common.categories": "分类",
+  "common.jobs": "个职位",
+  "common.loading": "加载中…",
+  "common.featured": "推荐",
+
+  "scholarship.minGpa": "最低GPA",
+  "scholarship.eligibleNationalities": "符合条件的国籍",
+
+  "tender.budget": "预算",
+  "tender.bidderEligibility": "投标人资格",
+  "tender.submissionMethod": "提交方式",
+
+  "deal.percentOff": "折扣",
+  "deal.couponCode": "优惠码",
+  "deal.redeemableIn": "可兑换地区",
+
+  "funding.grant": "资助",
+  "funding.orgEligibility": "组织资格",
+  "funding.targetRegions": "目标地区",
+
   "search.placeholder": "搜索职位、公司、技能…",
   "search.noResults": "没有找到匹配的职位。",
+  "search.filters": "筛选",
+  "search.clearAll": "清除全部",
+  "search.clear": "清除",
+  "search.showResults": "显示结果",
+  "search.category": "分类",
+  "search.remote": "远程",
+  "search.hybrid": "混合",
+  "search.onSite": "现场",
+  "search.employmentType": "雇佣类型",
+  "search.seniority": "经验要求",
+  "search.country": "国家",
+  "search.searchPlaceholder": "按职位、技能或公司搜索…",
+  "search.searchButton": "搜索",
+  "search.searchJobs": "搜索职位",
+  "search.sort": "排序",
+  "search.sortRelevance": "相关度",
+  "search.sortRecent": "最新",
+  "search.sortQuality": "最高质量",
+  "search.sortSalary": "薪资：从高到低",
+  "search.uncategorised": "（未分类）",
+
+  "flag.trigger": "举报此信息",
+  "flag.title": "举报此信息",
+  "flag.scam": "诈骗或钓鱼",
+  "flag.expired": "已过期或已招满",
+  "flag.duplicate": "重复信息",
+  "flag.spam": "垃圾信息或低质量",
+  "flag.other": "其他",
+  "flag.thankYou": "感谢——您的举报已记录，我们的管理员将进行审核。",
+  "flag.reason": "原因",
+  "flag.details": "详情（可选）",
+  "flag.detailsPlaceholder": "这条信息有什么问题？",
+  "flag.alreadyFlagged": "您已举报过此信息——感谢您帮助维护网站质量。",
+  "flag.signInRequired": "您需要登录才能举报信息。",
+  "flag.submitting": "提交中…",
+  "flag.submitButton": "提交举报",
+
+  "stats.views": "次浏览",
+  "stats.applies": "次申请",
+
+  "locale.showingJobs": "正在显示{country}的职位{langs}。",
+
+  "category.browseByCategory": "按分类浏览",
+  "category.noCategories": "暂无分类。",
+  "category.uncategorised": "未分类",
+  "category.notFound": "分类未找到",
+  "category.notFoundMessage": "该分类（暂时）不存在。",
+  "category.backToAll": "返回所有分类",
+  "category.latestRoles": "{category}的最新职位——按分类筛选，按日期排序。",
+  "category.noRolesOpen": "目前没有开放的{category}职位。",
+  "category.browseAllJobs": "浏览全部职位 →",
+
+  "status.applied": "已申请",
+  "status.responded": "已回复",
+  "status.interview": "面试已安排",
+  "status.offer": "已收到录用",
+  "status.rejected": "已拒绝",
+  "status.hired": "已录用",
+  "card.match": "%匹配",
+
+  "cascade.yourPreferences": "你的偏好",
+  "cascade.outside": "{country}以外",
+  "cascade.worldwide": "全球",
+  "cascade.loadingMore": "加载更多…",
+
+  "feed.all": "全部",
+  "feed.matches": "匹配",
+  "feed.starred": "收藏",
+  "feed.applied": "已申请",
+  "feed.empty": "暂无内容。",
+  "feed.tryAllFilter": "试试“全部”筛选。",
+  "feed.loadError": "无法加载您的机会。",
+
+  "dash.title": "我的面板",
+  "dash.setupIncomplete": "设置未完成",
+  "dash.finishPayment": "完成付款以启用匹配功能。",
+  "dash.browseJobs": "浏览职位",
+  "dash.changePlan": "更改套餐",
+  "dash.viewPlans": "查看套餐",
+  "dash.actionNeeded": "需要操作",
+  "dash.choosePlan": "选择套餐",
+  "dash.editPreferences": "编辑偏好",
+  "dash.paymentReceived": "已收到付款——您的订阅已生效。",
+  "dash.paymentFailed": "付款未完成。",
+  "dash.paymentWaiting": "正在等待支付平台确认——通常不到一分钟。",
+  "dash.matchPreferences": "匹配偏好",
+  "dash.matchPreferencesHint": "选择您希望匹配的机会类型。我们只会对您已配置的类型运行匹配。",
+  "dash.saving": "保存中…",
+  "dash.preferencesSaved": "偏好已保存。",
+  "dash.preferencesFailed": "无法保存偏好。",
+  "dash.billing": "账单",
+  "dash.active": "有效",
+  "dash.renewsOn": "续订日期",
+  "dash.changePlanOrCancel": "更改套餐或取消 →",
+  "dash.signInTitle": "请登录以继续",
+  "dash.signInHint": "面板展示您的套餐、匹配结果和收藏的职位。",
+  "dash.yourAgent": "您的专属顾问",
+  "dash.agentHint": "在您求职期间全程陪伴的私人招聘顾问。随时联系，当天回复。",
+  "dash.emailAgent": "邮件",
+  "dash.scheduleCall": "预约一对一通话",
+  "dash.paymentPastDue": "上次付款未成功",
+  "dash.updatePayment": "请更新付款信息以恢复匹配。",
+  "dash.subCancelled": "您的订阅已取消",
+  "dash.reactivateHint": "随时重新激活即可继续接收匹配结果。",
+  "dash.finishSetup": "完成 {plan} 套餐的设置",
+  "dash.matchingHint": "只有套餐生效后，我们才会对您的简历运行匹配引擎。整个过程只需两分钟。",
+  "dash.openingPayment": "正在打开支付页面…",
 
   "footer.about": "关于",
   "footer.pricing": "定价",

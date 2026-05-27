@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { listCategories } from "@/api/search";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function CategoryIndex() {
+  const { t } = useI18n();
   const q = useQuery({
     queryKey: ["categories"],
     queryFn: () => listCategories(),
@@ -11,7 +13,7 @@ export default function CategoryIndex() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold">Browse by category</h1>
+      <h1 className="text-3xl font-bold">{t("category.browseByCategory")}</h1>
       {q.isLoading ? (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -19,7 +21,7 @@ export default function CategoryIndex() {
           ))}
         </div>
       ) : cats.length === 0 ? (
-        <p className="mt-8 text-gray-500">No categories yet.</p>
+        <p className="mt-8 text-gray-500">{t("category.noCategories")}</p>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {cats.map((c) => (
@@ -29,9 +31,9 @@ export default function CategoryIndex() {
               className="rounded-lg border border-gray-200 p-4 hover:border-navy-300"
             >
               <div className="font-semibold capitalize text-gray-900">
-                {c.key || "Uncategorised"}
+                {c.key || t("category.uncategorised")}
               </div>
-              <div className="text-sm text-gray-500">{c.count.toLocaleString()} jobs</div>
+              <div className="text-sm text-gray-500">{c.count.toLocaleString()} {t("common.jobs")}</div>
             </a>
           ))}
         </div>

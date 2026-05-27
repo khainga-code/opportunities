@@ -16,6 +16,7 @@ import {
   countryLabel,
   getVisitorLocale,
 } from "@/utils/locale";
+import { useI18n } from "@/i18n/I18nProvider";
 
 // Cascade is the tiered-feed view. Renders whatever sections the
 // server returned in order (preferred → local → regional → global),
@@ -278,15 +279,17 @@ function TierScopeNote({
   tier: FeedTier;
   effectiveCountry: string;
 }) {
-  // A short secondary label so the user knows exactly what filter
-  // this section represents — avoids "why is 'Local' showing Nigeria
-  // jobs?" when CF mis-geo's them.
+  const { t } = useI18n();
   const parts: string[] = [];
-  if (tier.id === "preferred") parts.push("Your preferences");
+  if (tier.id === "preferred") parts.push(t("cascade.yourPreferences"));
   if (tier.country) parts.push(countryLabel(tier.country));
   if (tier.language) parts.push(tier.language.toUpperCase());
   if (!parts.length && tier.id === "global") {
-    parts.push(effectiveCountry ? `Outside ${countryLabel(effectiveCountry)}` : "Worldwide");
+    parts.push(
+      effectiveCountry
+        ? t("cascade.outside").replace("{country}", countryLabel(effectiveCountry))
+        : t("cascade.worldwide"),
+    );
   }
   if (!parts.length) return null;
   return (
@@ -345,7 +348,7 @@ function InfiniteSentinel({
       {busy ? (
         <div className="flex items-center gap-2 text-sm text-gray-500" role="status" aria-live="polite">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-navy-700" />
-          <span>Loading more…</span>
+          <LoadingMoreLabel />
         </div>
       ) : (
         // Sentinel retains height so the observer fires reliably even
@@ -354,6 +357,11 @@ function InfiniteSentinel({
       )}
     </div>
   );
+}
+
+function LoadingMoreLabel() {
+  const { t } = useI18n();
+  return <span>{t("cascade.loadingMore")}</span>;
 }
 
 function CascadeSkeleton() {

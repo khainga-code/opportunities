@@ -8,12 +8,14 @@ import {
   type OpportunityFilter,
 } from "@/api/candidates";
 import { OpportunityCard } from "./OpportunityCard";
+import { useI18n } from "@/i18n/I18nProvider";
+import type { StringKey } from "@/i18n/strings";
 
-const FILTERS: { id: OpportunityFilter; label: string }[] = [
-  { id: "all",     label: "All"      },
-  { id: "matches", label: "Matches"  },
-  { id: "starred", label: "Starred"  },
-  { id: "applied", label: "Applied"  },
+const FILTER_KEYS: { id: OpportunityFilter; labelKey: StringKey }[] = [
+  { id: "all",     labelKey: "feed.all"     },
+  { id: "matches", labelKey: "feed.matches" },
+  { id: "starred", labelKey: "feed.starred" },
+  { id: "applied", labelKey: "feed.applied" },
 ];
 
 function readFilterFromURL(): OpportunityFilter {
@@ -32,6 +34,7 @@ function writeFilterToURL(filter: OpportunityFilter) {
 }
 
 export function OpportunitiesFeed() {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<OpportunityFilter>(readFilterFromURL);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
@@ -46,13 +49,12 @@ export function OpportunitiesFeed() {
       setItems((prev) => (cursor ? [...prev, ...page.items] : page.items));
       setNextCursor(page.next_cursor);
     } catch {
-      setError("Couldn't load your opportunities. Refresh in a few seconds — if this keeps happening, drop us a line at jobs@stawi.org.");
+      setError(t("feed.loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
-  // Initial load + on filter change.
   useEffect(() => { void load(filter); }, [filter, load]);
 
   const onSelectFilter = (id: OpportunityFilter) => {
@@ -101,7 +103,7 @@ export function OpportunitiesFeed() {
   return (
     <section aria-label="Your opportunities" className="space-y-4">
       <div className="flex flex-wrap items-center gap-2" role="tablist">
-        {FILTERS.map((f) => {
+        {FILTER_KEYS.map((f) => {
           const active = f.id === filter;
           return (
             <button
@@ -116,7 +118,7 @@ export function OpportunitiesFeed() {
                   : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               }`}
             >
-              {f.label}
+              {t(f.labelKey)}
             </button>
           );
         })}
@@ -127,10 +129,10 @@ export function OpportunitiesFeed() {
           {error}
         </div>
       ) : loading && items.length === 0 ? (
-        <p className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">Loading…</p>
+        <p className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">{t("common.loading")}</p>
       ) : items.length === 0 ? (
         <p className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">
-          Nothing to show here yet. {filter !== "all" && "Try the 'All' filter."}
+          {t("feed.empty")} {filter !== "all" && t("feed.tryAllFilter")}
         </p>
       ) : (
         <>
@@ -153,7 +155,7 @@ export function OpportunitiesFeed() {
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               disabled={loading}
             >
-              {loading ? "Loading…" : "Load more"}
+              {loading ? t("common.loading") : t("cta.loadMore")}
             </button>
           )}
         </>

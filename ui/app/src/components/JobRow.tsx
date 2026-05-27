@@ -1,18 +1,23 @@
 import type { SearchResult } from "@/types/search";
 import { categoryLabel, fmtMoney, timeAgo } from "@/utils/format";
-
-const REMOTE_LABELS: Record<string, string> = {
-  remote: "Remote",
-  hybrid: "Hybrid",
-  onsite: "On-site",
-  on_site: "On-site",
-};
+import { useI18n } from "@/i18n/I18nProvider";
 
 /** Shared row renderer used by search results, category lists, home feed. */
 export function JobRow({ result }: { result: SearchResult }) {
+  const { t } = useI18n();
   const money = fmtMoney(result.salary_min, result.salary_max, result.currency);
   const hasSlug = !!result.slug;
   const href = hasSlug ? `/jobs/${encodeURIComponent(result.slug)}/` : undefined;
+
+  const remoteLabel = (key: string) => {
+    switch (key) {
+      case "remote": return t("search.remote");
+      case "hybrid": return t("search.hybrid");
+      case "onsite":
+      case "on_site": return t("search.onSite");
+      default: return key;
+    }
+  };
 
   const Inner = (
     <div className="flex items-start gap-4">
@@ -24,7 +29,7 @@ export function JobRow({ result }: { result: SearchResult }) {
           </span>
           {result.is_featured && (
             <span className="text-xs font-medium uppercase tracking-wide text-accent-700">
-              Featured
+              {t("common.featured")}
             </span>
           )}
         </div>
@@ -39,7 +44,7 @@ export function JobRow({ result }: { result: SearchResult }) {
             <span>{categoryLabel(result.category)}</span>
           )}
           {result.remote_type && (
-            <span>· {REMOTE_LABELS[result.remote_type] ?? result.remote_type}</span>
+            <span>· {remoteLabel(result.remote_type)}</span>
           )}
           {money && <span className="text-gray-800">· {money}</span>}
         </div>

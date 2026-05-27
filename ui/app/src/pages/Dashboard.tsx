@@ -13,36 +13,18 @@ import {
 import { OpportunitiesFeed } from "@/components/OpportunitiesFeed";
 import { normalizePlan, planById, type PlanId } from "@/utils/plans";
 import { OnboardingRouter } from "@/onboarding/router";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const PENDING_PROMPT_KEY = "stawi.billing.pending_prompt_id";
 
-// Per-kind onboarding tabs — each entry maps a kind id to the flow id
-// the OnboardingRouter dispatches to. Matches the registry kinds
-// (job, scholarship, tender, deal, funding) wired in Phase 1.3.
-const PREFERENCE_KINDS: ReadonlyArray<{ kind: string; flow: string; label: string }> = [
-  { kind: "job",         flow: "job-onboarding-v1",         label: "Jobs" },
-  { kind: "scholarship", flow: "scholarship-onboarding-v1", label: "Scholarships" },
-  { kind: "tender",      flow: "tender-onboarding-v1",      label: "Tenders" },
-  { kind: "deal",        flow: "deal-onboarding-v1",        label: "Deals" },
-  { kind: "funding",     flow: "funding-onboarding-v1",     label: "Funding" },
+const PREFERENCE_KINDS: ReadonlyArray<{ kind: string; flow: string; labelKey: import("@/i18n/strings").StringKey }> = [
+  { kind: "job",         flow: "job-onboarding-v1",         labelKey: "kind.job" },
+  { kind: "scholarship", flow: "scholarship-onboarding-v1", labelKey: "kind.scholarship" },
+  { kind: "tender",      flow: "tender-onboarding-v1",      labelKey: "kind.tender" },
+  { kind: "deal",        flow: "deal-onboarding-v1",        labelKey: "kind.deal" },
+  { kind: "funding",     flow: "funding-onboarding-v1",     labelKey: "kind.funding" },
 ];
 
-/**
- * /dashboard/ — the working surface for signed-in candidates.
- *
- * There is no free tier. Every dashboard visitor is in one of two
- * states:
- *
- *   1. No active subscription yet — profile exists but payment hasn't
- *      completed. We show a "Complete payment" nudge + access to their
- *      onboarded preferences.
- *   2. Active on starter / pro / managed — tier-specific surface:
- *        starter  → match queue, weekly digest, upgrade-to-pro nudge
- *        pro      → larger queue + cover-letter shortcuts
- *        managed  → agent card (name, email, direct line) + curated matches
- *
- * Tier comes from GET /me/subscription.
- */
 export default function Dashboard() {
   const { state, login } = useAuth();
 
@@ -53,10 +35,6 @@ export default function Dashboard() {
     staleTime: 60_000,
   });
 
-  // Page-level guard: if the user lands here without an active
-  // subscription (direct URL, browser back from /onboarding/, etc.),
-  // bounce them to the wizard. Doesn't fire until the query resolves
-  // so the Skeleton renders during the wait — no flash.
   useEffect(() => {
     if (state !== "authenticated") return;
     if (subQ.isLoading) return;
@@ -109,15 +87,16 @@ function DashboardHeader({
   plan: PlanId | null;
   active: boolean;
 }) {
-  const label = plan && active ? planById(plan).name : "Setup incomplete";
+  const { t } = useI18n();
+  const label = plan && active ? planById(plan).name : t("dash.setupIncomplete");
   const tagline =
     plan && active
       ? planById(plan).tagline
-      : "Finish payment to unlock matching.";
+      : t("dash.finishPayment");
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Your dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t("dash.title")}</h1>
         <p className="mt-1 flex items-center gap-2 text-gray-600">
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -136,14 +115,14 @@ function DashboardHeader({
           href="/jobs/"
           className="text-sm font-medium text-gray-700 hover:text-navy-900"
         >
-          Browse jobs
+          {t("dash.browseJobs")}
         </a>
         {plan !== "managed" && (
           <a
             href="/pricing/"
             className="inline-flex items-center rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-navy-800"
           >
-            {active ? "Change plan" : "View plans"}
+            {active ? t("dash.changePlan") : t("dash.viewPlans")}
           </a>
         )}
       </div>
@@ -158,24 +137,25 @@ function CompletePaymentPanel({
   plan: PlanId | null;
   status: string;
 }) {
+  const { t } = useI18n();
   const headline =
     status === "past_due"
-      ? "Your last payment didn't go through"
+      ? t("dash.paymentPastDue")
       : status === "cancelled"
-        ? "Your subscription is cancelled"
+        ? t("dash.subCancelled")
         : plan
-          ? `Finish setting up your ${planById(plan).name} plan`
-          : "Pick a plan to start matching";
+          ? t("dash.finishSetup").replace("{plan}", planById(plan).name)
+          : t("dash.choosePlan");
   const body =
     status === "past_due"
-      ? "Update your payment details to resume matching."
+      ? t("dash.updatePayment")
       : status === "cancelled"
-        ? "Re-activate any time to start receiving matches again."
-        : "We'll only run our matching engine on your CV once a plan is active. It takes two minutes.";
+        ? t("dash.reactivateHint")
+        : t("dash.matchingHint");
   return (
     <div className="rounded-lg border border-amber-300 bg-amber-50 p-6">
       <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-        Action needed
+        {t("dash.actionNeeded")}
       </p>
       <h2 className="mt-2 text-xl font-bold text-gray-900">{headline}</h2>
       <p className="mt-1 text-sm text-gray-700">{body}</p>
@@ -187,14 +167,14 @@ function CompletePaymentPanel({
             href="/pricing/"
             className="inline-flex items-center rounded-md bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800"
           >
-            Choose a plan
+            {t("dash.choosePlan")}
           </a>
         )}
         <a
           href="/onboarding/"
           className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
-          Edit preferences
+          {t("dash.editPreferences")}
         </a>
       </div>
     </div>
@@ -202,6 +182,7 @@ function CompletePaymentPanel({
 }
 
 function RetryCheckoutButton({ plan }: { plan: PlanId }) {
+  const { t } = useI18n();
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const info = planById(plan);
@@ -238,7 +219,7 @@ function RetryCheckoutButton({ plan }: { plan: PlanId }) {
         disabled={busy}
         className="inline-flex items-center rounded-md bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800 disabled:opacity-60"
       >
-        {busy ? "Opening payment…" : `Pay $${info.price}/mo`}
+        {busy ? t("dash.openingPayment") : `Pay $${info.price}/mo`}
       </button>
       {err && <p className="mt-2 text-xs text-red-700">{err}</p>}
     </div>
@@ -246,28 +227,28 @@ function RetryCheckoutButton({ plan }: { plan: PlanId }) {
 }
 
 function AgentCard({ agent }: { agent: { name: string; email: string } }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-lg border border-accent-200 bg-accent-50 p-6">
       <p className="text-xs font-semibold uppercase tracking-wide text-accent-700">
-        Your agent
+        {t("dash.yourAgent")}
       </p>
       <h2 className="mt-2 text-xl font-bold text-gray-900">{agent.name}</h2>
       <p className="mt-1 text-sm text-gray-700">
-        Your personal recruiter for the duration of your search. Reach out
-        any time and expect a same-day response.
+        {t("dash.agentHint")}
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
         <a
           href={`mailto:${agent.email}`}
           className="inline-flex items-center rounded-md bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800"
         >
-          Email {agent.name.split(" ")[0]}
+          {t("dash.emailAgent")} {agent.name.split(" ")[0]}
         </a>
         <a
           href="#schedule"
           className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
-          Schedule a 1:1
+          {t("dash.scheduleCall")}
         </a>
       </div>
     </div>
@@ -275,24 +256,8 @@ function AgentCard({ agent }: { agent: { name: string; email: string } }) {
 }
 
 
-/**
- * Recovers a mid-flight checkout. When createCheckout returns
- * status:"pending" (M-PESA STK push, Polar async session), the
- * onboarding/dashboard navigates here with
- * `?billing=pending&prompt_id=…`. Without polling, the user is
- * stranded — the page sits with no feedback until they manually
- * refresh hours later. This component:
- *
- *   1. On mount, reads `prompt_id` from the URL OR from localStorage
- *      (a refresh-resilient stash so closing the tab doesn't strand
- *      the user).
- *   2. Long-polls /billing/checkout/status every 4s, up to ~3 min.
- *   3. On `paid` → clears the stash, invalidates the subscription
- *      query, swaps `?billing` for `?billing=success`.
- *   4. On `failed` → clears the stash, swaps to `?billing=failed`,
- *      surfaces the error in CompletePaymentPanel via URL params.
- */
 function PendingCheckoutPoller() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [state, setState] = useState<"idle" | "polling" | "paid" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -333,7 +298,7 @@ function PendingCheckoutPoller() {
         }
         if (res.status === "failed") {
           try { localStorage.removeItem(PENDING_PROMPT_KEY); } catch { /* ignore */ }
-          setError(res.error || "Payment didn't complete.");
+          setError(res.error || t("dash.paymentFailed"));
           setState("failed");
           const u = new URL(window.location.href);
           u.searchParams.delete("prompt_id");
@@ -345,7 +310,7 @@ function PendingCheckoutPoller() {
         // Transient — keep polling until the budget expires.
       }
       if (Date.now() - start > MAX_MS) {
-        setError("We're still waiting for your payment provider. Try again from below.");
+        setError(t("dash.paymentFailed"));
         setState("failed");
         return;
       }
@@ -353,20 +318,20 @@ function PendingCheckoutPoller() {
     };
     void tick();
     return () => { cancelled = true; };
-  }, [qc]);
+  }, [qc, t]);
 
   if (state === "idle") return null;
   if (state === "paid") {
     return (
       <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-        Payment received — your subscription is now active.
+        {t("dash.paymentReceived")}
       </div>
     );
   }
   if (state === "failed") {
     return (
       <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-        {error ?? "Payment didn't complete."} You can retry below.
+        {error ?? t("dash.paymentFailed")}
       </div>
     );
   }
@@ -377,20 +342,16 @@ function PendingCheckoutPoller() {
       aria-live="polite"
     >
       <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-      Waiting for your payment provider to confirm — this usually takes under a minute. You can leave this tab open; we'll update it automatically.
+      {t("dash.paymentWaiting")}
     </div>
   );
 }
 
 function PreferencesPanel() {
+  const { t } = useI18n();
   const [active, setActive] = useState<string>(PREFERENCE_KINDS[0]!.kind);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errMsg, setErrMsg] = useState<string | null>(null);
-  // Enabled kinds come from /candidates/match-kinds; the matching service
-  // returns only kinds whose matcher isn't a stub. While loading we render
-  // nothing rather than show tabs that may disappear once the response
-  // lands. On fetch failure we fall back to the production-ready pair so
-  // the dashboard stays usable.
   const [enabledKinds, setEnabledKinds] = useState<string[] | null>(null);
 
   useEffect(() => {
@@ -415,8 +376,6 @@ function PreferencesPanel() {
       ? PREFERENCE_KINDS
       : PREFERENCE_KINDS.filter((k) => enabledKinds.includes(k.kind));
 
-  // If the active tab got filtered out (e.g. flag flip while mounted),
-  // snap back to the first visible kind.
   useEffect(() => {
     if (visibleKinds.length === 0) return;
     if (!visibleKinds.some((k) => k.kind === active)) {
@@ -433,9 +392,6 @@ function PreferencesPanel() {
     setStatus("saving");
     setErrMsg(null);
     try {
-      // Posts the polymorphic PreferencesUpdatedV1 envelope (Phase 7.6)
-      // with just the active kind populated. The matching service merges
-      // server-side; we only carry the slice the user just edited.
       await authRuntime().fetch("/matching/candidates/preferences", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -444,22 +400,21 @@ function PreferencesPanel() {
       setStatus("saved");
     } catch (e) {
       setStatus("error");
-      setErrMsg(e instanceof Error ? e.message : "Couldn't save preferences");
+      setErrMsg(e instanceof Error ? e.message : t("dash.preferencesFailed"));
     }
   }
 
   return (
-    <Panel title="Match preferences">
+    <Panel title={t("dash.matchPreferences")}>
       <p className="text-sm text-gray-600">
-        Opt into the kinds of opportunities you want matched. We'll only run
-        matchers for kinds you've configured.
+        {t("dash.matchPreferencesHint")}
       </p>
       <nav
         className="mt-4 flex flex-wrap gap-1 border-b border-gray-200"
         role="tablist"
         aria-label="Opportunity kinds"
       >
-        {visibleKinds.map(({ kind, label }) => {
+        {visibleKinds.map(({ kind, labelKey }) => {
           const on = active === kind;
           return (
             <button
@@ -478,7 +433,7 @@ function PreferencesPanel() {
                 setErrMsg(null);
               }}
             >
-              {label}
+              {t(labelKey)}
             </button>
           );
         })}
@@ -490,14 +445,14 @@ function PreferencesPanel() {
         />
       </div>
       {status === "saving" && (
-        <p className="mt-3 text-sm text-gray-500">Saving…</p>
+        <p className="mt-3 text-sm text-gray-500">{t("dash.saving")}</p>
       )}
       {status === "saved" && (
-        <p className="mt-3 text-sm text-emerald-700">Preferences saved.</p>
+        <p className="mt-3 text-sm text-emerald-700">{t("dash.preferencesSaved")}</p>
       )}
       {status === "error" && (
         <p className="mt-3 text-sm text-red-700" role="alert">
-          {errMsg ?? "Couldn't save preferences."}
+          {errMsg ?? t("dash.preferencesFailed")}
         </p>
       )}
     </Panel>
@@ -512,23 +467,24 @@ function BillingPanel({
   plan: PlanId;
   renewsAt?: string;
 }) {
+  const { t } = useI18n();
   const info = planById(plan);
   return (
-    <Panel title="Billing">
+    <Panel title={t("dash.billing")}>
       <p className="text-sm text-gray-700">
         <span className="font-medium">{info.name}</span> · ${info.price}/month ·{" "}
-        <span className="text-emerald-700">Active</span>
+        <span className="text-emerald-700">{t("dash.active")}</span>
       </p>
       {renewsAt && (
         <p className="mt-1 text-xs text-gray-500">
-          Renews on {new Date(renewsAt).toLocaleDateString()}
+          {t("dash.renewsOn")} {new Date(renewsAt).toLocaleDateString()}
         </p>
       )}
       <a
         href="/pricing/"
         className="mt-3 inline-block text-sm font-medium text-accent-600 hover:text-accent-700"
       >
-        Change plan or cancel →
+        {t("dash.changePlanOrCancel")}
       </a>
     </Panel>
   );
@@ -559,8 +515,6 @@ function ProfileMount() {
         idpBaseUrl: cfg.oidcIssuer,
         apiBaseUrl: cfg.candidatesAPIURL,
         theme: "light",
-        // Shared theme module keeps StawiAuth + this popover in
-        // lockstep; edit src/theme/profile-widget.ts to retune both.
         tokens: profileWidgetTokens,
         css: profileWidgetCSS,
         onLogout: () => {
@@ -576,18 +530,19 @@ function ProfileMount() {
 }
 
 function SignedOut({ onSignIn }: { onSignIn: () => Promise<void> }) {
+  const { t } = useI18n();
   return (
     <div className="mx-auto max-w-md py-16 text-center">
-      <h1 className="text-2xl font-semibold text-gray-900">Sign in to continue</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">{t("dash.signInTitle")}</h1>
       <p className="mt-2 text-gray-600">
-        Your dashboard shows your plan, matches, and saved jobs.
+        {t("dash.signInHint")}
       </p>
       <button
         type="button"
         onClick={() => void onSignIn()}
         className="mt-6 rounded-md bg-navy-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-navy-800"
       >
-        Sign in
+        {t("nav.signIn")}
       </button>
     </div>
   );

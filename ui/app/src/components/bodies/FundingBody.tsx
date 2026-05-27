@@ -3,14 +3,10 @@ import {
   type OpportunitySnapshot,
 } from "@/types/snapshot";
 import { fmtMoney } from "@/utils/format";
+import { useI18n } from "@/i18n/I18nProvider";
 
-/**
- * FundingBody renders kind=funding attributes: focus_area,
- * organisation_eligibility, target_regions, plus the grant amount
- * range derived from the universal amount_min/amount_max. Deadline is
- * already rendered in the universal header upstream.
- */
 export default function FundingBody({ snap }: { snap: OpportunitySnapshot }) {
+  const { t } = useI18n();
   const focus = fundingFocusArea(snap);
   const orgEligibility = stringAttr(snap, "organisation_eligibility");
   const targetRegions = stringArrayAttr(snap, "target_regions");
@@ -27,16 +23,16 @@ export default function FundingBody({ snap }: { snap: OpportunitySnapshot }) {
           </span>
         )}
         {grant && (
-          <span className="font-medium text-emerald-700">Grant: {grant}</span>
+          <span className="font-medium text-emerald-700">{t("funding.grant")}: {grant}</span>
         )}
       </div>
 
       <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {orgEligibility && (
-          <Field label="Organisation eligibility" value={orgEligibility} />
+          <Field label={t("funding.orgEligibility")} value={orgEligibility} />
         )}
         {targetRegions.length > 0 && (
-          <Field label="Target regions" value={targetRegions.join(", ")} />
+          <Field label={t("funding.targetRegions")} value={targetRegions.join(", ")} />
         )}
       </dl>
 

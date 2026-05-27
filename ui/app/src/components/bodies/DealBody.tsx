@@ -2,13 +2,10 @@ import {
   dealDiscountPercent,
   type OpportunitySnapshot,
 } from "@/types/snapshot";
+import { useI18n } from "@/i18n/I18nProvider";
 
-/**
- * DealBody renders kind=deal attributes: discount_percent, expiry,
- * coupon_code, redemption_countries. Universal header upstream renders
- * the deadline (which doubles as the deal expiry).
- */
 export default function DealBody({ snap }: { snap: OpportunitySnapshot }) {
+  const { t } = useI18n();
   const discount = dealDiscountPercent(snap);
   const couponCode = stringAttr(snap, "coupon_code");
   const expiry = stringAttr(snap, "expiry") ?? snap.deadline;
@@ -21,12 +18,12 @@ export default function DealBody({ snap }: { snap: OpportunitySnapshot }) {
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600">
         {typeof discount === "number" && (
           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-            {discount}% off
+            {discount}{t("deal.percentOff")}
           </span>
         )}
         {expiry && (
           <span className="text-orange-700">
-            Expires {new Date(expiry).toLocaleDateString()}
+            {t("deadline.expires")} {new Date(expiry).toLocaleDateString()}
           </span>
         )}
       </div>
@@ -34,13 +31,13 @@ export default function DealBody({ snap }: { snap: OpportunitySnapshot }) {
       <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {couponCode && (
           <Field
-            label="Coupon code"
+            label={t("deal.couponCode")}
             value={couponCode}
             mono
           />
         )}
         {redemptionCountries.length > 0 && (
-          <Field label="Redeemable in" value={redemptionCountries.join(", ")} />
+          <Field label={t("deal.redeemableIn")} value={redemptionCountries.join(", ")} />
         )}
       </dl>
 

@@ -4,15 +4,10 @@ import {
   type OpportunitySnapshot,
 } from "@/types/snapshot";
 import { fmtMoney } from "@/utils/format";
+import { useI18n } from "@/i18n/I18nProvider";
 
-/**
- * ScholarshipBody renders kind=scholarship attributes: degree_level,
- * field_of_study, gpa_min, eligible_nationalities, plus the funding
- * stipend range derived from the universal amount_min/amount_max.
- * Deadline countdown is shown in the universal header upstream; here
- * we only render kind-specific fields.
- */
 export default function ScholarshipBody({ snap }: { snap: OpportunitySnapshot }) {
+  const { t } = useI18n();
   const degree = scholarshipDegreeLevel(snap);
   const field = scholarshipFieldOfStudy(snap);
   const gpaMin = numberAttr(snap, "gpa_min");
@@ -41,10 +36,10 @@ export default function ScholarshipBody({ snap }: { snap: OpportunitySnapshot })
 
       <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {typeof gpaMin === "number" && (
-          <Field label="Minimum GPA" value={gpaMin.toFixed(2)} />
+          <Field label={t("scholarship.minGpa")} value={gpaMin.toFixed(2)} />
         )}
         {eligible.length > 0 && (
-          <Field label="Eligible nationalities" value={eligible.join(", ")} />
+          <Field label={t("scholarship.eligibleNationalities")} value={eligible.join(", ")} />
         )}
       </dl>
 
