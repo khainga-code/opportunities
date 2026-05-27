@@ -1,7 +1,8 @@
 // bootstrap.go — implementation of the `writer bootstrap-iceberg`
-// subcommand. Idempotent: registers the Lakekeeper warehouse, creates
-// the `opportunities` and `candidates` namespaces, then materialises
-// the canonical 12-table Iceberg schema.
+// subcommand. Idempotent: enables R2 Data Catalog on the chronicle
+// bucket (if not already enabled), then creates the `opportunities`
+// and `candidates` namespaces and materialises the canonical Iceberg
+// table schema.
 //
 // Designed to run as a Kubernetes Job on every FluxCD reconcile —
 // duplicate bootstrap runs are safe (every step short-circuits on
@@ -10,7 +11,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -28,11 +28,10 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/icebergclient"
 )
 
-// readinessTimeout caps how long bootstrap will poll
-// /management/v1/info before giving up. Lakekeeper boots in <30 s in
-// the cluster, but DB migrations on a fresh deploy push it longer.
+// readinessTimeout caps how long bootstrap will poll the R2 Data Catalog
+// API before giving up.
 const (
-	readinessTimeout  = 5 * time.Minute
+	readinessTimeout  = 3 * time.Minute
 	readinessInterval = 5 * time.Second
 )
 
@@ -48,29 +47,22 @@ func runBootstrap(ctx context.Context) error {
 
 	log := util.Log(ctx)
 
-	mgmtBase := managementBase(cfg.IcebergCatalogURI)
-	// Frame-managed HTTP client — bootstrap runs as a one-shot Job so we
-	// build the client directly rather than spinning up a full Frame
-	// service for a couple of management calls.
 	httpClient := frameclient.NewHTTPClient(ctx,
 		frameclient.WithHTTPTimeout(30*time.Second),
 		frameclient.WithHTTPTraceRequests(),
 	)
 
-	log.WithField("base", mgmtBase).Info("bootstrap: waiting for Lakekeeper readiness")
-	if err := waitForLakekeeper(ctx, httpClient, mgmtBase); err != nil {
-		return fmt.Errorf("lakekeeper readiness: %w", err)
+	// Enable R2 Data Catalog on the chronicle bucket (idempotent).
+	log.WithField("bucket", cfg.R2Bucket).Info("bootstrap: ensuring R2 Data Catalog is enabled")
+	if err := ensureR2Catalog(ctx, httpClient, cfg); err != nil {
+		return fmt.Errorf("enable R2 catalog: %w", err)
 	}
 
-	// Lakekeeper requires accept-terms once per cluster before any
-	// management call works. Idempotent — returns 200 on subsequent
-	// invocations (or 4xx that we treat as already-bootstrapped).
-	if err := acceptBootstrapTerms(ctx, httpClient, mgmtBase); err != nil {
-		log.WithError(err).Warn("bootstrap: accept-terms call non-fatal failure (likely already bootstrapped)")
-	}
-
-	if err := ensureWarehouse(ctx, httpClient, mgmtBase, cfg); err != nil {
-		return fmt.Errorf("ensure warehouse: %w", err)
+	// Wait for the catalog REST endpoint to be reachable before
+	// creating namespaces and tables.
+	log.WithField("uri", cfg.IcebergCatalogURI).Info("bootstrap: waiting for catalog readiness")
+	if err := waitForCatalog(ctx, httpClient, cfg.IcebergCatalogURI, cfg.IcebergCatalogToken); err != nil {
+		return fmt.Errorf("catalog readiness: %w", err)
 	}
 
 	cat, err := icebergclient.LoadCatalog(ctx, icebergclient.CatalogConfig{
@@ -95,25 +87,76 @@ func runBootstrap(ctx context.Context) error {
 	return nil
 }
 
-// managementBase strips the trailing /catalog path from
-// ICEBERG_CATALOG_URI to produce the management-API base URL.
-// Example:
-//
-//	"http://lakekeeper-catalog.lakehouse.svc.cluster.local:8181/catalog"
-//	→ "http://lakekeeper-catalog.lakehouse.svc.cluster.local:8181"
-func managementBase(catalogURI string) string {
-	trimmed := strings.TrimRight(catalogURI, "/")
-	if strings.HasSuffix(trimmed, "/catalog") {
-		return strings.TrimSuffix(trimmed, "/catalog")
+// ensureR2Catalog enables the R2 Data Catalog on the chronicle bucket
+// via the Cloudflare API. Idempotent — if already enabled, the API
+// returns the existing catalog details.
+func ensureR2Catalog(ctx context.Context, client *http.Client, cfg writercfg.Config) error {
+	log := util.Log(ctx).WithField("bucket", cfg.R2Bucket)
+
+	// Check if catalog is already enabled.
+	statusURL := fmt.Sprintf(
+		"https://api.cloudflare.com/client/v4/accounts/%s/r2-catalog/%s",
+		cfg.R2AccountID, cfg.R2Bucket,
+	)
+	statusReq, err := http.NewRequestWithContext(ctx, http.MethodGet, statusURL, nil)
+	if err != nil {
+		return err
 	}
-	return trimmed
+	statusReq.Header.Set("Authorization", "Bearer "+cfg.CloudflareAPIToken)
+
+	statusResp, err := client.Do(statusReq)
+	if err != nil {
+		return fmt.Errorf("check catalog status: %w", err)
+	}
+	defer func() { _ = statusResp.Body.Close() }()
+
+	if statusResp.StatusCode == http.StatusOK {
+		var body struct {
+			Result struct {
+				Status string `json:"status"`
+			} `json:"result"`
+		}
+		if err := json.NewDecoder(statusResp.Body).Decode(&body); err == nil && body.Result.Status == "active" {
+			log.Info("bootstrap: R2 Data Catalog already enabled")
+			return nil
+		}
+	}
+
+	// Enable the catalog.
+	enableURL := fmt.Sprintf(
+		"https://api.cloudflare.com/client/v4/accounts/%s/r2-catalog/%s/enable",
+		cfg.R2AccountID, cfg.R2Bucket,
+	)
+	enableReq, err := http.NewRequestWithContext(ctx, http.MethodPost, enableURL, nil)
+	if err != nil {
+		return err
+	}
+	enableReq.Header.Set("Authorization", "Bearer "+cfg.CloudflareAPIToken)
+	enableReq.Header.Set("Content-Type", "application/json")
+
+	enableResp, err := client.Do(enableReq)
+	if err != nil {
+		return fmt.Errorf("enable catalog: %w", err)
+	}
+	defer func() { _ = enableResp.Body.Close() }()
+
+	if enableResp.StatusCode >= 200 && enableResp.StatusCode < 300 {
+		log.Info("bootstrap: R2 Data Catalog enabled")
+		return nil
+	}
+	if enableResp.StatusCode == http.StatusConflict {
+		log.Info("bootstrap: R2 Data Catalog already enabled (409)")
+		return nil
+	}
+	b, _ := io.ReadAll(io.LimitReader(enableResp.Body, 4096))
+	return fmt.Errorf("enable catalog: status %d: %s", enableResp.StatusCode, string(b))
 }
 
-// waitForLakekeeper polls /management/v1/info until 2xx or the deadline
-// expires. Returns nil when the catalog is reachable.
-func waitForLakekeeper(ctx context.Context, client *http.Client, base string) error {
+// waitForCatalog polls the Iceberg REST catalog's GET /v1/config
+// endpoint until it responds with 2xx or the deadline expires.
+func waitForCatalog(ctx context.Context, client *http.Client, catalogURI, token string) error {
 	deadline := time.Now().Add(readinessTimeout)
-	url := base + "/management/v1/info"
+	url := strings.TrimRight(catalogURI, "/") + "/v1/config"
 	log := util.Log(ctx)
 
 	for {
@@ -121,142 +164,29 @@ func waitForLakekeeper(ctx context.Context, client *http.Client, base string) er
 		if err != nil {
 			return err
 		}
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
 		resp, err := client.Do(req)
 		if err == nil {
 			_ = resp.Body.Close()
 			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-				log.WithField("status", resp.StatusCode).Info("bootstrap: Lakekeeper ready")
+				log.WithField("status", resp.StatusCode).Info("bootstrap: catalog ready")
 				return nil
 			}
-			log.WithField("status", resp.StatusCode).Debug("bootstrap: Lakekeeper not yet ready")
+			log.WithField("status", resp.StatusCode).Debug("bootstrap: catalog not yet ready")
 		} else {
-			log.WithError(err).Debug("bootstrap: Lakekeeper info probe failed")
+			log.WithError(err).Debug("bootstrap: catalog probe failed")
 		}
 
 		if time.Now().After(deadline) {
-			return fmt.Errorf("lakekeeper not ready after %s (last err: %v)", readinessTimeout, err)
+			return fmt.Errorf("catalog not ready after %s (last err: %v)", readinessTimeout, err)
 		}
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-time.After(readinessInterval):
 		}
-	}
-}
-
-// acceptBootstrapTerms posts to /management/v1/bootstrap. Subsequent
-// calls return non-200 which we tolerate — Lakekeeper has no GET to
-// inspect bootstrap state, but the body of management/v1/info indicates
-// it. We swallow non-success here because the warehouse step will fail
-// loudly if bootstrap was the actual blocker.
-func acceptBootstrapTerms(ctx context.Context, client *http.Client, base string) error {
-	body := []byte(`{"accept-terms-of-use": true}`)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/management/v1/bootstrap", bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		util.Log(ctx).Info("bootstrap: accept-terms accepted")
-		return nil
-	}
-	// Conflict / already-bootstrapped is fine; surface as nil to caller.
-	if resp.StatusCode == http.StatusConflict || resp.StatusCode == http.StatusBadRequest {
-		util.Log(ctx).WithField("status", resp.StatusCode).Debug("bootstrap: accept-terms already done")
-		return nil
-	}
-	b, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-	return fmt.Errorf("accept-terms: unexpected status %d: %s", resp.StatusCode, string(b))
-}
-
-// warehouseListResponse models the "warehouses" key in the response of
-// GET /management/v1/warehouse. Lakekeeper 0.10.x returns each item as
-// an object with a "name" field; we only inspect that.
-type warehouseListResponse struct {
-	Warehouses []struct {
-		Name string `json:"name"`
-	} `json:"warehouses"`
-}
-
-// ensureWarehouse lists warehouses; if cfg.IcebergWarehouse is missing,
-// POSTs the registration body. The body shape is the Lakekeeper 0.10.x
-// shape (verified against deployment.manifests/MIGRATIONS.md).
-func ensureWarehouse(ctx context.Context, client *http.Client, base string, cfg writercfg.Config) error {
-	log := util.Log(ctx).WithField("warehouse", cfg.IcebergWarehouse)
-
-	listReq, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/management/v1/warehouse", nil)
-	if err != nil {
-		return err
-	}
-	listResp, err := client.Do(listReq)
-	if err != nil {
-		return fmt.Errorf("list warehouses: %w", err)
-	}
-	defer func() { _ = listResp.Body.Close() }()
-	if listResp.StatusCode < 200 || listResp.StatusCode >= 300 {
-		b, _ := io.ReadAll(io.LimitReader(listResp.Body, 1024))
-		return fmt.Errorf("list warehouses: status %d: %s", listResp.StatusCode, string(b))
-	}
-	var listed warehouseListResponse
-	if err := json.NewDecoder(listResp.Body).Decode(&listed); err != nil {
-		return fmt.Errorf("decode warehouse list: %w", err)
-	}
-	for _, w := range listed.Warehouses {
-		if w.Name == cfg.IcebergWarehouse {
-			log.Info("bootstrap: warehouse already registered")
-			return nil
-		}
-	}
-
-	body := map[string]any{
-		"warehouse-name": cfg.IcebergWarehouse,
-		"delete-profile": map[string]string{"type": "hard"},
-		"storage-credential": map[string]string{
-			"credential-type":   "cloudflare-r2",
-			"account-id":        cfg.R2AccountID,
-			"access-key-id":     cfg.R2AccessKeyID,
-			"secret-access-key": cfg.R2SecretAccessKey,
-			"token":             "",
-		},
-		"storage-profile": map[string]any{
-			"type":       "s3",
-			"bucket":     cfg.R2Bucket,
-			"region":     cfg.R2Region,
-			"key-prefix": cfg.IcebergWarehouse + "/",
-			"endpoint":   cfg.R2Endpoint,
-		},
-	}
-	raw, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-
-	postReq, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/management/v1/warehouse", bytes.NewReader(raw))
-	if err != nil {
-		return err
-	}
-	postReq.Header.Set("Content-Type", "application/json")
-	postResp, err := client.Do(postReq)
-	if err != nil {
-		return fmt.Errorf("post warehouse: %w", err)
-	}
-	defer func() { _ = postResp.Body.Close() }()
-	switch {
-	case postResp.StatusCode >= 200 && postResp.StatusCode < 300:
-		log.Info("bootstrap: warehouse registered")
-		return nil
-	case postResp.StatusCode == http.StatusConflict:
-		// Race with another bootstrap pod; treat as success.
-		log.Info("bootstrap: warehouse already registered (409)")
-		return nil
-	default:
-		b, _ := io.ReadAll(io.LimitReader(postResp.Body, 4096))
-		return fmt.Errorf("register warehouse: status %d: %s", postResp.StatusCode, string(b))
 	}
 }
 
@@ -272,8 +202,6 @@ func ensureNamespaces(ctx context.Context, cat catalog.Catalog) error {
 		case errors.Is(err, catalog.ErrNamespaceAlreadyExists):
 			log.WithField("namespace", ns).Debug("bootstrap: namespace already exists")
 		default:
-			// Some catalog implementations don't wrap their "already exists"
-			// errors with errors.Is — defensively match the message too.
 			if isAlreadyExistsErr(err) {
 				log.WithField("namespace", ns).Debug("bootstrap: namespace already exists (string match)")
 				continue
@@ -308,8 +236,6 @@ func ensureTables(ctx context.Context, cat catalog.Catalog) error {
 
 // isAlreadyExistsErr is a defensive fallback for catalog backends whose
 // error wrapping doesn't satisfy errors.Is on the canonical sentinels.
-// REST + Glue both return text containing the phrase; we match it
-// case-insensitively.
 func isAlreadyExistsErr(err error) bool {
 	if err == nil {
 		return false
@@ -317,4 +243,3 @@ func isAlreadyExistsErr(err error) bool {
 	msg := strings.ToLower(err.Error())
 	return strings.Contains(msg, "already exists") || strings.Contains(msg, "alreadyexists")
 }
-
