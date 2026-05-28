@@ -489,14 +489,16 @@ Routes:
 | `/admin/definitions/{type}/{name}` | view + edit one definition |
 | `/admin/dlq` | (future — out of scope here) |
 
-**Auth — role check, not separate auth flow.** Same OAuth2 / Hydra flow as the candidate dashboard. Authorization is by JWT claim: a user with the `admin` role in their token gets access; everyone else gets 404.
+**Auth — role check, not a separate auth flow.** Same OAuth2 / Hydra flow as the candidate dashboard. Authorization is by JWT claim: a user with the `admin` role in their token gets access; everyone else gets 404.
 
 Two enforcement points, both reading the same JWT:
 
 1. **API side** (every `/admin/*` endpoint): existing `requireAdmin` middleware extracts the security claims, checks for the `admin` role, returns 403 otherwise. This is the security boundary — if it's broken, the data leaks regardless of UI.
-2. **UI side** (Hugo template at `/admin/`): server-side role check before serving the React shell; returns 404 (not 403) for non-admins so the existence of the page isn't a discoverable secret. Browser-side, the React app additionally checks the role on mount and re-routes home if missing — defense-in-depth for stale tokens.
+2. **UI side** (`/admin/` mount): the JS auth runtime already in use (`@stawi/auth-runtime`, source at `/home/j/code/stawi.dev/widgets.js/shared/auth-runtime/`) exposes `getRoles(): Promise<string[]>` (`runtime.ts:60`). It reads the role list from the JWT — supporting both the direct `roles: []` claim shape and Keycloak's nested `realm_access.roles: []` (`shared/jwt.ts:12-20`). The admin React shell calls `auth.getRoles()` on mount and re-routes to `/` (or shows 404) if the array doesn't include `"admin"`. This is defense-in-depth — the security boundary is on the API; the UI check just hides the page from non-admins.
 
-No new identity provider, no new role table — the role lives in Hydra's user-role assignment the same way other roles already do (e.g. the existing `service_*` audiences). Granting admin to a person = one Hydra console edit.
+Two consequences:
+- Hugo serves the admin shell unconditionally (no server-side gate). The cost is one extra request from a curious non-admin who finds the URL; the API returns 403 to all data calls so they see an empty/error page. Simpler than threading the role into the Hugo template.
+- Granting admin to a user is a single Hydra console edit — add `admin` to the user's roles claim. No new IdP, no new role table, no new permission system.
 
 Vite build emits to `static/admin-app/` (parallel to the existing `static/app/`). The Hugo build picks it up automatically.
 
