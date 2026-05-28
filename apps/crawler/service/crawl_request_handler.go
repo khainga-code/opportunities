@@ -194,6 +194,38 @@ func (h *CrawlRequestHandler) Execute(ctx context.Context, payload any) error {
 		return nil
 	}
 
+	// Audit ledger: open a crawl_jobs row. Idempotent on idempotency_key
+	// — Frame redeliveries of the same NATS msg reuse the same row via
+	// the unique (idempotency_key, scheduled_at) composite index.
+	crawlJob := &domain.CrawlJob{
+		SourceID:       src.ID,
+		ScheduledAt:    req.ScheduledAt,
+		Status:         domain.CrawlScheduled,
+		Attempt:        1,
+		IdempotencyKey: req.IdempotencyKey,
+	}
+	if crawlJob.IdempotencyKey == "" {
+		crawlJob.IdempotencyKey = fmt.Sprintf("%s:%s", src.ID, req.ScheduledAt.Format(time.RFC3339))
+	}
+	if crawlJob.ScheduledAt.IsZero() {
+		crawlJob.ScheduledAt = time.Now().UTC()
+	}
+
+	if h.deps.CrawlRepo != nil {
+		if err := h.deps.CrawlRepo.Create(ctx, crawlJob); err != nil {
+			// Likely a unique-constraint violation from a re-delivery.
+			// Fall back to the existing row so we don't double-insert.
+			if existing, lookupErr := h.deps.CrawlRepo.GetByIdempotencyKey(ctx, crawlJob.IdempotencyKey); lookupErr == nil && existing != nil {
+				crawlJob = existing
+			} else {
+				return fmt.Errorf("crawl.request: open crawl_jobs row: %w", err)
+			}
+		}
+		if err := h.deps.CrawlRepo.Start(ctx, crawlJob.ID); err != nil {
+			return fmt.Errorf("crawl.request: mark started: %w", err)
+		}
+	}
+
 	iter := conn.Crawl(ctx, *src)
 
 	var (
