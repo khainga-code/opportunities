@@ -70,7 +70,7 @@ Six phases, each operator-visible on its own:
 |---|---|---|
 | **L1** | B — source/variant/opportunity trace endpoints + basic admin page | 4-5 days |
 | **L2** | B — rejection drill-down (raw_payload_id on event + R2 body fetch endpoint) | 1-2 days |
-| **L3** | A — `pkg/definitions` R2 loader + refresh + NATS broadcast + admin endpoints | 4-5 days |
+| **L3** | A — `pkg/definitions` R2 loader + refresh + NATS broadcast + admin endpoints + per-source extraction_prompt_extension | 5-6 days |
 | **L4** | A — spec-driven `htmllisting` + `jsonfeed` connectors | 3-4 days |
 | **L5** | B — Iceberg query path for historic (>7 d) trace; seed digest | 2-3 days |
 | **L6** | UI polish — admin sub-app pages for all the above | 2-3 days |
@@ -234,7 +234,42 @@ Implementation: walks JSONPath expressions via `github.com/PaesslerAG/jsonpath` 
 
 Both connectors register themselves under a placeholder type name (`spec`) and dispatch internally based on the `type:` field of the loaded spec. The connector registry rebuilds on `definitions.changed.v1` for type=connector.
 
-#### A.6 Wiring
+#### A.6 Per-source prompt extensions
+
+The kind-level extraction prompt (in `definitions/opportunity-kinds/{kind}.yaml`) is one template for all sources of that kind. But sources have quirks: Brightermonday encodes city names in a sidebar widget, Workday wraps salary in a `data-` attribute, Naukri lists multiple openings per page that need a "pick the first" instruction. Today the only escape hatch is editing the shared kind prompt — which affects every source of that kind.
+
+**Solution:** add a per-source string appended to the kind prompt at extract time.
+
+**Schema:**
+
+```sql
+ALTER TABLE sources
+    ADD COLUMN IF NOT EXISTS extraction_prompt_extension TEXT NOT NULL DEFAULT '';
+```
+
+(Migration added to `apps/crawler/migrations/0001/` in Plan B.)
+
+**Storage path:** edit-via-admin lands in the `sources` row directly; the source-seed YAML format also grows an optional `extraction_prompt_extension` field so seeds-from-git can pre-populate it. On seed upsert, repo content overwrites if changed (operator can edit in admin UI; next git sync overwrites unless back-ported — same contract as definitions).
+
+**Wiring:** `pkg/extraction.Extractor.Extract(ctx, body, kinds, sourceExtension)` learns an optional last parameter. When non-empty, it's appended after the kind prompt:
+
+```
+{universal prefix}
+
+{kind extraction_prompt}
+
+{source-specific extension, prefixed with: "Additional instructions for THIS source:"}
+
+{body}
+```
+
+The crawler's `enrichOne` reads `src.ExtractionPromptExtension` from the looked-up source and passes it through. The crawler-side queue / Plan-2 enricher worker does the same.
+
+**Admin endpoints:** the existing `PUT /admin/sources/{id}` accepts `extraction_prompt_extension` in its body (currently the sources_admin.go handler takes a struct with `RequiredAttributesByKind` etc.; this is one more field). Edit triggers no rebuild — the next crawl reads the column. No NATS broadcast needed (the field is per-row and read from the database on each crawl.request).
+
+**UI surface:** the admin UI's source page gets a textarea labelled "Extraction prompt extension" with a preview that shows the rendered combined prompt (kind base + extension). Length cap: 4 KB (a sentence or two of guidance, not a rewrite).
+
+#### A.7 Wiring
 
 `apps/crawler/service/setup.go` (`BuildRegistry`) gets a final loop:
 
