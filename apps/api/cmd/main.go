@@ -237,6 +237,13 @@ func main() {
 		registerFlagsAdmin(ctx, mux, jm)
 	}
 
+	// Admin UI — static SPA served from /admin/. Always registered
+	// (independent of SourceAdminEnabled) because the UI is a thin
+	// shell that simply 401s against /admin/* APIs when they're
+	// disabled; operators see a graceful "endpoints unavailable"
+	// state instead of a blank 404.
+	registerAdminUI(ctx, mux)
+
 	// Verify-stage rejection visibility — operator-facing read of the
 	// opportunities.variants_rejected Iceberg sink. Currently stubbed
 	// to 501; see endpoints_v2.go for the implementation note.

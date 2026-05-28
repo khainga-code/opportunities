@@ -17,3 +17,7 @@ bin/
 # Bootstrap secrets — NEVER commit these
 scripts/bootstrap/vault-seeds.env
 .claude/
+
+# Admin UI dist is copied in by the Dockerfile build stage; don't commit it.
+apps/api/cmd/adminui/*
+!apps/api/cmd/adminui/.gitkeep
