@@ -94,6 +94,13 @@ func (m *MemoryLoader) List(_ context.Context, t Type) ([]Entry, error) {
 	return out, nil
 }
 
+// Invalidate is a no-op for the in-memory loader (cache is the source
+// of truth). Exists to satisfy the admin-handler's loader interface
+// without forcing tests to spin up R2.
+func (m *MemoryLoader) Invalidate(_ context.Context, _ Type, _ string) error {
+	return nil
+}
+
 // Subscribe registers a callback fired on Put/Delete.
 func (m *MemoryLoader) Subscribe(t Type, fn func(name, version string)) func() {
 	m.mu.Lock()

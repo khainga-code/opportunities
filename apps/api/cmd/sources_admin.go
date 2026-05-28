@@ -35,9 +35,14 @@ import (
 	"github.com/pitabwire/frame/security"
 	"github.com/pitabwire/util"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awscreds "github.com/aws/aws-sdk-go-v2/credentials"
+	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
+
 	"github.com/stawi-opportunities/opportunities/pkg/archive"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/arbeitnow"
+	"github.com/stawi-opportunities/opportunities/pkg/definitions"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/greenhouse"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/himalayas"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/httpx"
@@ -179,7 +184,34 @@ func registerSourcesAdmin(ctx context.Context, mux *http.ServeMux, cfg *apiConfi
 		log.Warn("source admin: R2 not configured; /admin/raw_payloads/{id}/body disabled")
 	}
 
-	log.Info("source admin: endpoints registered under /admin/sources, /admin/trace")
+	// /admin/definitions/* — pluggable-definitions CRUD over R2. Wired
+	// only when R2 credentials + the content bucket name are present;
+	// otherwise admin keeps the source surface available and surfaces a
+	// warning. Uses the same R2 credentials as the archive bucket but
+	// points at the content bucket where the definitions/{type}/*.yaml
+	// keys live.
+	if cfg.R2AccountID != "" && cfg.R2ContentBucket != "" {
+		s3Client := awss3.New(awss3.Options{
+			Region:       "auto",
+			Credentials:  awscreds.NewStaticCredentialsProvider(cfg.R2AccessKeyID, cfg.R2SecretAccessKey, ""),
+			BaseEndpoint: aws.String(fmt.Sprintf("https://%s.r2.cloudflarestorage.com", cfg.R2AccountID)),
+		})
+		loader := definitions.NewR2Loader(definitions.R2Config{
+			Client: s3Client,
+			Bucket: cfg.R2ContentBucket,
+			Prefix: "definitions",
+		})
+		if err := loader.Start(ctx); err != nil {
+			log.WithError(err).Warn("source admin: definitions loader start failed; /admin/definitions/* disabled")
+		} else {
+			registerDefinitionsAdmin(mux, loader, s3Client, cfg.R2ContentBucket, "definitions", frameEmitter{svc: svc})
+			log.Info("source admin: /admin/definitions/* wired")
+		}
+	} else {
+		log.Warn("source admin: R2 not configured; /admin/definitions/* disabled")
+	}
+
+	log.Info("source admin: endpoints registered under /admin/sources, /admin/trace, /admin/definitions")
 }
 
 // buildAdminConnectorRegistry returns a connectors.Registry suitable for
