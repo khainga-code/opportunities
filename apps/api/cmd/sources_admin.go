@@ -7,12 +7,14 @@
 // onboarding a new careers page, or rejecting a flaky source.
 //
 // All endpoints are namespaced under /admin/sources and gated by a
-// thin Bearer-token middleware that records the calling profile id on
-// the request context. The middleware is intentionally permissive: a
-// gateway-side SecurityManager already verifies signatures, so this
-// only checks "is there a token?" and surfaces the sub claim for
-// audit logs. Production deployments front the api with the same
-// Hydra JWT validation the crawler's admin endpoints get.
+// Bearer-token middleware that gates handlers on the JWT having the
+// 'admin' role. A gateway-side SecurityManager already verifies
+// signatures and writes the claims into the context, so this middleware
+// reads security.ClaimsFromContext, checks GetRoles() for 'admin', and
+// returns 401 (no Bearer / no claims) or 403 (no admin role) otherwise.
+// The JS auth-runtime exposes getRoles() that parses the same JWT
+// shape, so the React app self-gates symmetrically — but requireAdmin
+// IS the security boundary; the UI check is defense-in-depth.
 package main
 
 import (
