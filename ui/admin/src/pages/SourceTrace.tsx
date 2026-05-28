@@ -1,6 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchAdminJSON, type SourceTraceResponse } from '@/api/admin-client';
+import {
+  clearCheckpoint,
+  fetchAdminJSON,
+  listCheckpoints,
+  type CheckpointRow,
+  type SourceTraceResponse,
+} from '@/api/admin-client';
 
 // Renders GET /admin/trace/sources/{id}?since=24h as a 24-hour summary
 // plus a recent-crawls table. The endpoint is implemented in
@@ -9,6 +15,15 @@ export function SourceTrace() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<SourceTraceResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [checkpoints, setCheckpoints] = useState<CheckpointRow[]>([]);
+  const [cpBusy, setCpBusy] = useState<string | null>(null);
+
+  const reloadCheckpoints = useCallback(() => {
+    if (!id) return;
+    listCheckpoints(id)
+      .then((res) => setCheckpoints(res.checkpoints))
+      .catch(() => setCheckpoints([])); // soft-fail: trace UI keeps rendering
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -19,7 +34,24 @@ export function SourceTrace() {
     )
       .then(setData)
       .catch((e: unknown) => setErr(e instanceof Error ? e.message : String(e)));
-  }, [id]);
+    reloadCheckpoints();
+  }, [id, reloadCheckpoints]);
+
+  const onReset = async (connectorType: string) => {
+    if (!id) return;
+    if (!window.confirm(`Reset checkpoint for ${id}/${connectorType}? Next crawl will start from page 1.`)) {
+      return;
+    }
+    setCpBusy(connectorType);
+    try {
+      await clearCheckpoint(id, connectorType);
+      reloadCheckpoints();
+    } catch (e: unknown) {
+      window.alert('Failed to clear checkpoint: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setCpBusy(null);
+    }
+  };
 
   if (err) return <pre style={{ color: 'crimson' }}>{err}</pre>;
   if (!data) return <p>Loading source trace…</p>;
@@ -84,6 +116,48 @@ export function SourceTrace() {
               ))}
             </ul>
           </>
+        )}
+      </section>
+
+      <section>
+        <h2>Iterator checkpoints</h2>
+        {checkpoints.length === 0 ? (
+          <p style={{ color: '#666' }}>
+            No active checkpoints — last crawl completed cleanly (or
+            the connector doesn't participate in resume).
+          </p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Connector</th>
+                <th>Page</th>
+                <th>Last URL</th>
+                <th>Updated</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {checkpoints.map((c) => (
+                <tr key={`${c.source_id}/${c.connector_type}`}>
+                  <td><code>{c.connector_type}</code></td>
+                  <td>{c.page_idx}</td>
+                  <td style={{ maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {c.last_url ?? ''}
+                  </td>
+                  <td>{new Date(c.last_checkpoint_at).toLocaleString()}</td>
+                  <td>
+                    <button
+                      onClick={() => onReset(c.connector_type)}
+                      disabled={cpBusy === c.connector_type}
+                    >
+                      {cpBusy === c.connector_type ? 'Clearing…' : 'Reset checkpoint'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </section>
 

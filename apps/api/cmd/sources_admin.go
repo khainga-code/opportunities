@@ -183,6 +183,14 @@ func registerSourcesAdmin(ctx context.Context, mux *http.ServeMux, cfg *apiConfi
 	registerTraceAdmin(mux, traceRepo, repo, iceCat)
 	registerDigestAdmin(mux, traceRepo, iceCat)
 
+	// /admin/checkpoints — operator can inspect resume state per
+	// source and force-clear a stuck checkpoint when a listing has
+	// shifted and the source keeps resuming from a no-longer-fresh
+	// page. Same database pool as the rest of the admin surface.
+	checkpointRepo := repository.NewCheckpointRepository(pool.DB)
+	registerCheckpointAdmin(mux, checkpointRepo)
+	log.Info("source admin: /admin/checkpoints (GET/DELETE) wired")
+
 	// /admin/raw_payloads/{id}/body — operator pulls the original HTML
 	// from R2 for rejection drill-down. Wired only when R2 creds + the
 	// archive bucket name are present; otherwise the endpoint stays

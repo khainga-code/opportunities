@@ -265,3 +265,37 @@ export const listSources = async (limit: number = 100): Promise<SourceListItem[]
   );
   return res.sources;
 };
+
+// Per-source iterator checkpoint shape returned by GET /admin/checkpoints.
+// Mirrors pkg/repository.Checkpoint — cursor is the connector's own
+// JSON shape, opaque to the UI.
+export type CheckpointRow = {
+  source_id: string;
+  connector_type: string;
+  cursor: unknown;
+  page_idx: number;
+  last_url?: string;
+  last_checkpoint_at: string;
+};
+
+export type CheckpointListResponse = {
+  checkpoints: CheckpointRow[];
+  count: number;
+};
+
+export const listCheckpoints = (sourceID?: string): Promise<CheckpointListResponse> => {
+  const q = sourceID ? `?source_id=${encodeURIComponent(sourceID)}` : '';
+  return fetchAdminJSON<CheckpointListResponse>(`/admin/checkpoints${q}`);
+};
+
+// clearCheckpoint deletes one (source_id, connector_type) row. Idempotent
+// on the server — clearing an already-missing checkpoint returns 204.
+export const clearCheckpoint = async (
+  sourceID: string,
+  connectorType: string
+): Promise<void> => {
+  await authRuntime().fetch(
+    `/admin/checkpoints/${encodeURIComponent(sourceID)}/${encodeURIComponent(connectorType)}`,
+    { method: 'DELETE' }
+  );
+};
