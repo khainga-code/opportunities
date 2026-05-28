@@ -15,13 +15,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
 
+	"github.com/pitabwire/util"
 	"gorm.io/gorm"
 
 	"github.com/stawi-opportunities/opportunities/pkg/domain"
+	"github.com/stawi-opportunities/opportunities/pkg/icebergclient"
 	"github.com/stawi-opportunities/opportunities/pkg/repository"
 )
 
@@ -35,16 +38,19 @@ type sourceLookup interface {
 // traceAdminHandler bundles the dependencies for /admin/trace/*
 // routes. trace is required; sources is required for the source-trace
 // endpoint and may be nil otherwise (the variant/opportunity handlers
-// don't read it).
+// don't read it). iceberg is optional — when nil, historic queries
+// past the 7d Postgres retention silently fall back to Postgres-only.
 type traceAdminHandler struct {
 	trace   *repository.TraceRepository
 	sources sourceLookup
+	iceberg *icebergclient.Catalog
 }
 
 // registerTraceAdmin wires every /admin/trace/* route on the supplied
-// mux. Called from main.go alongside registerSourcesAdmin.
-func registerTraceAdmin(mux *http.ServeMux, trace *repository.TraceRepository, sources sourceLookup) {
-	h := traceAdminHandler{trace: trace, sources: sources}
+// mux. Called from main.go alongside registerSourcesAdmin. iceberg may
+// be nil; the handler degrades gracefully.
+func registerTraceAdmin(mux *http.ServeMux, trace *repository.TraceRepository, sources sourceLookup, iceberg *icebergclient.Catalog) {
+	h := traceAdminHandler{trace: trace, sources: sources, iceberg: iceberg}
 	mux.HandleFunc("GET /admin/trace/sources/{id}", requireAdmin(h.SourceTrace))
 	mux.HandleFunc("GET /admin/trace/variants/{id}", requireAdmin(h.VariantTrace))
 	mux.HandleFunc("GET /admin/trace/opportunities/{slug}", requireAdmin(h.OpportunityTrace))
@@ -88,6 +94,15 @@ func (h traceAdminHandler) SourceTrace(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal", err.Error())
 		return
+	}
+
+	// When the requested window crosses the 7d Postgres retention,
+	// layer in Iceberg historic rejections. Soft-fails: a transient
+	// catalog error logs a warning but the Postgres-only response
+	// still ships. The DataSource flag tells the operator UI which
+	// path supplied the numbers.
+	if h.iceberg != nil && window > 6*24*time.Hour {
+		augmentSummaryFromIceberg(ctx, h.iceberg, id, window, summary)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -160,6 +175,115 @@ func (h traceAdminHandler) OpportunityTrace(w http.ResponseWriter, r *http.Reque
 		"variant_count": len(variants),
 		"variants":      variants,
 	})
+}
+
+// augmentSummaryFromIceberg layers historic rejection counts + reasons
+// from the variants_rejected Iceberg table onto the Postgres summary.
+// On success the summary's DataSource flips to "postgres+iceberg" and
+// VariantsRejected / RejectionReasons gain the historic rows. On
+// failure (transient catalog hiccup, table missing on a fresh install)
+// the summary is left as the Postgres-only baseline and a warning logs.
+//
+// Time-windowing is applied client-side: Iceberg's variants_rejected
+// has rejected_at, and we filter rows >= (now - window). This is a
+// scan-and-filter — the projection keeps it cheap, but if the table
+// grows past ~5k rows per scan the limit will start truncating
+// historic data. Plan D can move this to a partition-pruned scan.
+func augmentSummaryFromIceberg(
+	ctx context.Context,
+	cat *icebergclient.Catalog,
+	sourceID string,
+	window time.Duration,
+	summary *repository.SourceSummary,
+) {
+	log := util.Log(ctx)
+	rows, err := cat.ReadRecent(ctx, "opportunities", "variants_rejected",
+		[]string{"source_id", "reasons", "rejected_at"}, 5000)
+	if err != nil {
+		log.WithError(err).WithField("source_id", sourceID).
+			Warn("trace admin: iceberg variants_rejected read failed; serving postgres-only summary")
+		return
+	}
+	cutoff := time.Now().Add(-window)
+	for _, row := range rows {
+		if !rowSourceMatches(row["source_id"], sourceID) {
+			continue
+		}
+		if rejAt, ok := parseRowTimestamp(row["rejected_at"]); ok && rejAt.Before(cutoff) {
+			continue
+		}
+		summary.VariantsRejected++
+		for _, reason := range parseRejectionReasons(row["reasons"]) {
+			summary.RejectionReasons[reason]++
+		}
+	}
+	summary.DataSource = "postgres+iceberg"
+}
+
+// rowSourceMatches accepts the Arrow marshaled source_id and compares
+// to the operator-supplied id. Arrow may marshal the string column as
+// either string or []byte depending on type — accept both.
+func rowSourceMatches(raw any, want string) bool {
+	switch v := raw.(type) {
+	case string:
+		return v == want
+	case []byte:
+		return string(v) == want
+	}
+	return false
+}
+
+// parseRowTimestamp tries to coerce a marshaled Arrow timestamp into a
+// time.Time. Arrow GetOneForMarshal emits timestamps as ints (nanos
+// since epoch) or strings (RFC3339); we handle both. Returns (zero,
+// false) on miss so the caller falls back to "include this row".
+func parseRowTimestamp(raw any) (time.Time, bool) {
+	switch v := raw.(type) {
+	case time.Time:
+		return v, true
+	case string:
+		if t, err := time.Parse(time.RFC3339Nano, v); err == nil {
+			return t, true
+		}
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
+			return t, true
+		}
+		if t, err := time.Parse("2006-01-02T15:04:05.000000", v); err == nil {
+			return t, true
+		}
+	case int64:
+		// Arrow Timestamp[micros] is the writer's choice for *_at columns.
+		return time.UnixMicro(v).UTC(), true
+	case float64:
+		return time.UnixMicro(int64(v)).UTC(), true
+	}
+	return time.Time{}, false
+}
+
+// parseRejectionReasons extracts the reason list from a Iceberg
+// variants_rejected row. The schema is StringType — Arrow marshals as
+// either a JSON-encoded string ('["missing_title", ...]') or, if the
+// writer stored a plain comma-joined value, a flat string. Accept both
+// shapes so old + new rows aggregate cleanly.
+func parseRejectionReasons(raw any) []string {
+	var body string
+	switch v := raw.(type) {
+	case string:
+		body = v
+	case []byte:
+		body = string(v)
+	default:
+		return nil
+	}
+	if body == "" {
+		return nil
+	}
+	// Try JSON array first; fall back to a single-reason string.
+	var arr []string
+	if err := json.Unmarshal([]byte(body), &arr); err == nil {
+		return arr
+	}
+	return []string{body}
 }
 
 // parseWindow accepts Go duration strings ("24h", "1h", "168h").

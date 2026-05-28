@@ -19,9 +19,11 @@ import (
 )
 
 // SourceSummary aggregates trace metrics for a single source over a
-// time window. CrawlJobs / Variants counts come from Postgres only —
-// any historic data beyond pipeline_variants' 7d retention is missing
-// (Plan C wires the Iceberg fallback).
+// time window. The base aggregate is Postgres-only; the api handler
+// layers Iceberg historic rejections on top when the requested window
+// exceeds the pipeline_variants 7d retention. The DataSource flag tells
+// the operator UI which path was used so it can surface a "historic
+// data included" badge.
 type SourceSummary struct {
 	Window            time.Duration    `json:"-"`
 	CrawlJobs         int64            `json:"crawl_jobs"`
@@ -30,7 +32,10 @@ type SourceSummary struct {
 	VariantsEmitted   int64            `json:"variants_emitted"`
 	VariantsPublished int64            `json:"variants_published"`
 	VariantsRejected  int64            `json:"variants_rejected"`
-	RejectionReasons  map[string]int64 `json:"rejection_reasons"` // empty until L5 wires Iceberg
+	RejectionReasons  map[string]int64 `json:"rejection_reasons"`
+	// DataSource is "postgres" by default; the api handler upgrades
+	// it to "postgres+iceberg" after a successful historic read.
+	DataSource string `json:"data_source"`
 }
 
 // CrawlSummary is one row in the SourceTrace.recent_crawls list.
@@ -120,6 +125,7 @@ func (r *TraceRepository) SourceSummary(ctx context.Context, sourceID string, wi
 	s := SourceSummary{
 		Window:           window,
 		RejectionReasons: map[string]int64{},
+		DataSource:       "postgres",
 	}
 	err := r.db(ctx, true).Raw(`
 		SELECT

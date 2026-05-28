@@ -43,6 +43,7 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/connectors"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/arbeitnow"
 	"github.com/stawi-opportunities/opportunities/pkg/definitions"
+	"github.com/stawi-opportunities/opportunities/pkg/icebergclient"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/greenhouse"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/himalayas"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/httpx"
@@ -168,8 +169,17 @@ func registerSourcesAdmin(ctx context.Context, mux *http.ServeMux, cfg *apiConfi
 
 	// /admin/trace/* shares the same database pool + source repo for
 	// the source-lookup leg, so we wire it here rather than duplicating
-	// the frame-datastore boot in main.go.
-	registerTraceAdmin(mux, repository.NewTraceRepository(pool.DB), repo)
+	// the frame-datastore boot in main.go. The Iceberg catalog is
+	// optional — when ICEBERG_CATALOG_URI isn't set the handler skips
+	// the historic layer and serves Postgres-only summaries.
+	var iceCat *icebergclient.Catalog
+	if cat, err := icebergclient.NewCatalogFromEnv(ctx); err == nil {
+		iceCat = cat
+		log.Info("source admin: iceberg catalog wired for historic trace queries")
+	} else {
+		log.WithError(err).Warn("source admin: iceberg catalog init failed; historic queries disabled")
+	}
+	registerTraceAdmin(mux, repository.NewTraceRepository(pool.DB), repo, iceCat)
 
 	// /admin/raw_payloads/{id}/body — operator pulls the original HTML
 	// from R2 for rejection drill-down. Wired only when R2 creds + the
