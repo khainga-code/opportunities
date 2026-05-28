@@ -186,12 +186,21 @@ func HasVisibleContent(rawHTML string) bool {
 // it can produce. A single entry skips the classifier; an empty slice
 // means "any registered kind"; more than one calls the classifier and
 // validates its output against the allowed set.
-func (e *Extractor) Extract(ctx context.Context, html string, sourceKinds []string) (*domain.ExternalOpportunity, error) {
+//
+// sourceExtension is the per-source ExtractionPromptExtension. When
+// non-empty, it's appended after the kind prompt as additional
+// instructions for that one source — operator-edited guidance that
+// doesn't justify changing the shared kind template. Pass "" when no
+// extension applies.
+func (e *Extractor) Extract(ctx context.Context, html string, sourceKinds []string, sourceExtension string) (*domain.ExternalOpportunity, error) {
 	kind, err := e.pickKind(ctx, html, sourceKinds)
 	if err != nil {
 		return nil, err
 	}
 	prompt := e.buildPrompt(kind)
+	if sourceExtension != "" {
+		prompt += "\n\nAdditional instructions for THIS source:\n" + sourceExtension
+	}
 	raw, err := e.llm.Complete(ctx, prompt+"\n\nDocument:\n"+html)
 	if err != nil {
 		return nil, fmt.Errorf("extraction: %w", err)

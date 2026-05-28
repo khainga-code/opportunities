@@ -705,7 +705,7 @@ func (h *CrawlRequestHandler) enrichOne(ctx context.Context, opp *domain.Externa
 		body = ext.Markdown
 	}
 
-	extracted, err := h.deps.Extractor.Extract(ctx, body, src.Kinds)
+	extracted, err := h.deps.Extractor.Extract(ctx, body, src.Kinds, src.ExtractionPromptExtension)
 	if err != nil || extracted == nil {
 		if err != nil {
 			util.Log(ctx).WithError(err).WithField("url", opp.ApplyURL).Debug("enrich: LLM extract failed")
