@@ -83,6 +83,9 @@ func (f *fakeSourceRepo) Update(_ context.Context, id string, fields map[string]
 	if v, ok := fields["auto_approve"].(bool); ok {
 		s.AutoApprove = v
 	}
+	if v, ok := fields["extraction_prompt_extension"].(string); ok {
+		s.ExtractionPromptExtension = v
+	}
 	return nil
 }
 
@@ -639,5 +642,58 @@ func TestSourcesAdmin_UpdateValidates(t *testing.T) {
 	mux.ServeHTTP(rr, req)
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d", rr.Code)
+	}
+}
+
+func TestSourcesAdmin_Update_ExtractionPromptExtension(t *testing.T) {
+	_, repo, _, mux := adminTestHarness(t)
+	repo.rows["src-prompt-1"] = &domain.Source{
+		BaseModel: domain.BaseModel{ID: "src-prompt-1"},
+		Type:      domain.SourceType("greenhouse"),
+		BaseURL:   "https://x",
+		Country:   "US",
+		Status:    domain.SourceActive,
+	}
+
+	body := map[string]any{
+		"extraction_prompt_extension": "Look for salary in data-salary attribute.",
+	}
+	raw, _ := json.Marshal(body)
+	req := httptest.NewRequest("PUT", "/admin/sources/src-prompt-1", bytes.NewReader(raw))
+	setAdminAuth(req)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK && rr.Code != http.StatusNoContent {
+		t.Fatalf("status = %d; body=%s", rr.Code, rr.Body.String())
+	}
+	got := repo.rows["src-prompt-1"]
+	if got.ExtractionPromptExtension != "Look for salary in data-salary attribute." {
+		t.Fatalf("extension not persisted: %q", got.ExtractionPromptExtension)
+	}
+}
+
+func TestSourcesAdmin_Update_ExtensionTooLong(t *testing.T) {
+	_, repo, _, mux := adminTestHarness(t)
+	repo.rows["src-prompt-2"] = &domain.Source{
+		BaseModel: domain.BaseModel{ID: "src-prompt-2"},
+		Type:      domain.SourceType("greenhouse"),
+		BaseURL:   "https://x",
+		Country:   "US",
+		Status:    domain.SourceActive,
+	}
+	big := make([]byte, 4097)
+	for i := range big {
+		big[i] = 'x'
+	}
+	body := map[string]any{"extraction_prompt_extension": string(big)}
+	raw, _ := json.Marshal(body)
+	req := httptest.NewRequest("PUT", "/admin/sources/src-prompt-2", bytes.NewReader(raw))
+	setAdminAuth(req)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d; want 400 (>4KB extension)", rr.Code)
 	}
 }

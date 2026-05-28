@@ -361,14 +361,15 @@ func (a *sourcesAdmin) handleCreate(w http.ResponseWriter, r *http.Request) {
 // Status is intentionally NOT here — lifecycle transitions go through
 // the dedicated endpoints (verify/approve/reject/pause/resume).
 type updateSourceRequest struct {
-	Name                     *string              `json:"name"`
-	Country                  *string              `json:"country"`
-	Language                 *string              `json:"language"`
-	Priority                 *domain.Priority     `json:"priority"`
-	CrawlIntervalSec         *int                 `json:"crawl_interval_sec"`
-	Kinds                    *[]string            `json:"kinds"`
-	RequiredAttributesByKind *map[string][]string `json:"required_attributes_by_kind"`
-	AutoApprove              *bool                `json:"auto_approve"`
+	Name                      *string              `json:"name"`
+	Country                   *string              `json:"country"`
+	Language                  *string              `json:"language"`
+	Priority                  *domain.Priority     `json:"priority"`
+	CrawlIntervalSec          *int                 `json:"crawl_interval_sec"`
+	Kinds                     *[]string            `json:"kinds"`
+	RequiredAttributesByKind  *map[string][]string `json:"required_attributes_by_kind"`
+	AutoApprove               *bool                `json:"auto_approve"`
+	ExtractionPromptExtension *string              `json:"extraction_prompt_extension"`
 }
 
 func (a *sourcesAdmin) handleUpdate(w http.ResponseWriter, r *http.Request) {
@@ -426,6 +427,13 @@ func (a *sourcesAdmin) handleUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.AutoApprove != nil {
 		updates["auto_approve"] = *req.AutoApprove
+	}
+	if req.ExtractionPromptExtension != nil {
+		if len(*req.ExtractionPromptExtension) > 4096 {
+			writeError(w, http.StatusBadRequest, "bad_request", "extraction_prompt_extension exceeds 4096 bytes")
+			return
+		}
+		updates["extraction_prompt_extension"] = *req.ExtractionPromptExtension
 	}
 	if len(updates) == 0 {
 		writeError(w, http.StatusBadRequest, "no_fields", "request had no editable fields")
