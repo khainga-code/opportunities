@@ -107,6 +107,13 @@ type Variant struct {
 	CanonicalID     *string        `gorm:"column:canonical_id"`
 	Slug            *string        `gorm:"column:slug"`
 	RawContentHash  *string        `gorm:"column:raw_content_hash"`
+	// RawPayloadID + CrawlJobID forward-link a variant row to the
+	// audit ledger written by the crawler (raw_payloads / crawl_jobs).
+	// Both nullable because (a) the rejected-variant path writes a row
+	// before either link is meaningful, and (b) tests construct
+	// variants without a backing crawl.
+	RawPayloadID    *string        `gorm:"column:raw_payload_id"`
+	CrawlJobID      *string        `gorm:"column:crawl_job_id"`
 	StageAt         time.Time      `gorm:"column:stage_at;not null;default:now()"`
 	Attempts        map[string]any `gorm:"column:attempts;type:jsonb;serializer:json"`
 	LastError       *string        `gorm:"column:last_error"`
