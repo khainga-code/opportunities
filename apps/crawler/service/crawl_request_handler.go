@@ -27,6 +27,7 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/extraction"
 	"github.com/stawi-opportunities/opportunities/pkg/normalize"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
+	"github.com/stawi-opportunities/opportunities/pkg/repository"
 	"github.com/stawi-opportunities/opportunities/pkg/telemetry"
 	"github.com/stawi-opportunities/opportunities/pkg/variantstate"
 )
@@ -74,6 +75,11 @@ type CrawlRequestDeps struct {
 	// missing rows). Soft-fail throughout: a Postgres outage degrades
 	// observability but does not stall the chain.
 	VariantStore *variantstate.Store
+	// CrawlRepo writes the crawl_jobs + raw_payloads audit ledger.
+	// nil disables ledger writes (test paths). Errors propagate — a
+	// Postgres outage MUST fail the crawl, otherwise the ledger silently
+	// diverges from reality.
+	CrawlRepo *repository.CrawlRepository
 }
 
 // CrawlRequestHandler consumes jobs.crawl.requests.v1, runs the

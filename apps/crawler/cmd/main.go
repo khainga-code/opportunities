@@ -297,6 +297,12 @@ func main() {
 	// Verify failures).
 	variantStore := variantstate.NewStore(dbFn)
 
+	// crawl_jobs + raw_payloads audit ledger. Writes propagate errors
+	// (unlike VariantStore) — the ledger is the source of truth for
+	// what the pipeline ever attempted, so a Postgres outage MUST fail
+	// the crawl rather than silently diverge.
+	crawlRepo := repository.NewCrawlRepository(dbFn)
+
 	crawlReqH := service.NewCrawlRequestHandler(service.CrawlRequestDeps{
 		Svc:               svc,
 		Sources:           sourceRepo,
@@ -309,6 +315,7 @@ func main() {
 		EnrichConcurrency: cfg.EnrichConcurrency,
 		DiscoverSample:    0.05, // roughly 1-in-20 pages get DiscoverSites
 		VariantStore:      variantStore,
+		CrawlRepo:         crawlRepo,
 	})
 	pageDoneH := service.NewPageCompletedHandler(sourceRepo)
 	srcDiscH := service.NewSourceDiscoveredHandler(sourceRepo, reg)
