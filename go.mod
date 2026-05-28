@@ -32,6 +32,7 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/markusmobius/go-trafilatura v1.12.2
 	github.com/microcosm-cc/bluemonday v1.0.27
+	github.com/mmcdole/gofeed v1.3.0
 	github.com/nguyenthenguyen/docx v0.0.0-20230621112118-9c8e795a11db
 	github.com/parquet-go/parquet-go v0.29.0
 	github.com/pitabwire/frame v1.97.6
@@ -180,6 +181,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.23 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
+	github.com/mmcdole/goxpp v1.1.1-0.20240225020742-a0c311522b23 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/go-archive v0.2.0 // indirect
 	github.com/moby/moby/api v1.54.2 // indirect
