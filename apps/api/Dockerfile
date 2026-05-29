@@ -1,15 +1,6 @@
 ARG TARGETOS
 ARG TARGETARCH
 
-# === UI builder: build the admin SPA dist ===
-FROM --platform=$BUILDPLATFORM node:22-alpine AS ui-builder
-WORKDIR /ui
-COPY ui/admin/package.json ui/admin/package-lock.json ./
-RUN npm ci --no-audit --no-fund
-COPY ui/admin/ ./
-RUN npm run build:embed
-
-# === Go builder ===
 FROM --platform=$BUILDPLATFORM golang:1.26 AS builder
 
 ARG TARGETOS
@@ -27,10 +18,6 @@ RUN go mod download
 
 COPY ./apps/api ./apps/api
 COPY ./pkg ./pkg
-
-# Overlay the admin SPA build into the //go:embed-anchored adminui dir
-# so the api binary ships with the static assets baked in.
-COPY --from=ui-builder /ui/dist/ ./apps/api/cmd/adminui/
 
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath \

@@ -1,4 +1,0 @@
-Anchor for //go:embed all:adminui — see admin_ui.go.
-Dockerfile's ui-builder stage overlays ui/admin/dist/ contents here at build time.
-Local devs: this dir stays empty (.gitignore-d below the keep) and the admin UI
-handler returns 503; for local SPA dev run `cd ui/admin && npm run dev` instead.
