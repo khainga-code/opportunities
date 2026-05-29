@@ -14,13 +14,15 @@ import (
 	"github.com/pitabwire/frame/security"
 
 	"github.com/stawi-opportunities/opportunities/pkg/domain"
+	"github.com/stawi-opportunities/opportunities/pkg/freshness"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
 	"github.com/stawi-opportunities/opportunities/pkg/repository"
 )
 
 // fakeSourceRepo is an in-memory sourceAdminRepo for handler tests.
 type fakeSourceRepo struct {
-	rows map[string]*domain.Source
+	rows    map[string]*domain.Source
+	signals map[string]freshness.SourceSignals
 }
 
 func newFakeSourceRepo() *fakeSourceRepo { return &fakeSourceRepo{rows: map[string]*domain.Source{}} }
@@ -176,6 +178,25 @@ func (f *fakeSourceRepo) ListWithFilters(_ context.Context, fl repository.ListFi
 		out = append(out, s)
 	}
 	return out, int64(len(out)), nil
+}
+
+// LoadSignals + UpdateScoreAndNextCrawl satisfy the AdaptiveScorer
+// slice of sourceAdminRepo. Tests that exercise the rescore handler
+// override these fields via the test helper; the defaults return
+// "no signals" so unrelated tests aren't accidentally coupled.
+func (f *fakeSourceRepo) LoadSignals(_ context.Context) (map[string]freshness.SourceSignals, error) {
+	if f.signals != nil {
+		return f.signals, nil
+	}
+	return map[string]freshness.SourceSignals{}, nil
+}
+
+func (f *fakeSourceRepo) UpdateScoreAndNextCrawl(_ context.Context, id string, score float64, nextCrawlAt time.Time) error {
+	if s, ok := f.rows[id]; ok {
+		s.Score = score
+		s.NextCrawlAt = nextCrawlAt
+	}
+	return nil
 }
 
 func (f *fakeSourceRepo) ListByStatuses(_ context.Context, statuses []domain.SourceStatus, _ int) ([]*domain.Source, error) {

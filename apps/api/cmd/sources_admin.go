@@ -54,6 +54,7 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/themuse"
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/workday"
 	"github.com/stawi-opportunities/opportunities/pkg/domain"
+	"github.com/stawi-opportunities/opportunities/pkg/freshness"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
 	"github.com/stawi-opportunities/opportunities/pkg/repository"
 	"github.com/stawi-opportunities/opportunities/pkg/sourceverify"
@@ -76,6 +77,12 @@ type sourceAdminRepo interface {
 	Reject(ctx context.Context, id, reason string) error
 	ListWithFilters(ctx context.Context, f repository.ListFilter) ([]*domain.Source, int64, error)
 	ListByStatuses(ctx context.Context, statuses []domain.SourceStatus, limit int) ([]*domain.Source, error)
+
+	// Adaptive recrawl surface (Plan D3). Used by the rescore handler
+	// to force-recompute a source's score without waiting for the next
+	// scheduler tick.
+	LoadSignals(ctx context.Context) (map[string]freshness.SourceSignals, error)
+	UpdateScoreAndNextCrawl(ctx context.Context, sourceID string, score float64, nextCrawlAt time.Time) error
 }
 
 // adminVerifier is the narrow slice of sourceverify.Dispatcher used by
@@ -161,6 +168,7 @@ func registerSourcesAdmin(ctx context.Context, mux *http.ServeMux, cfg *apiConfi
 	mux.HandleFunc("POST /admin/sources/{id}/resume", requireAdmin(a.handleResume))
 	mux.HandleFunc("POST /admin/sources/{id}/stop", requireAdmin(a.handleStop))
 	mux.HandleFunc("POST /admin/sources/{id}/start", requireAdmin(a.handleStart))
+	mux.HandleFunc("POST /admin/sources/{id}/rescore", requireAdmin(a.handleRescore))
 	mux.HandleFunc("GET /admin/sources/{id}", requireAdmin(a.handleGet))
 	mux.HandleFunc("PUT /admin/sources/{id}", requireAdmin(a.handleUpdate))
 	mux.HandleFunc("DELETE /admin/sources/{id}", requireAdmin(a.handleDelete))
@@ -722,6 +730,61 @@ func (a *sourcesAdmin) handleStart(w http.ResponseWriter, r *http.Request) {
 	}
 	logAction(r, "start", id)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": id, "status": domain.SourceActive})
+}
+
+// handleRescore force-recomputes a single source's freshness score +
+// next_crawl_at without waiting for the next scheduler tick. The
+// signals come from the crawl_signals materialized view; if the view
+// has no row for this source yet (e.g. brand new source pre-first-
+// refresh) we return 404 so the operator knows to wait one tick or
+// trigger a verification crawl first.
+//
+// Tier is hard-coded to 2 (neutral) until Source.Tier ships — see
+// Plan B2 follow-up.
+func (a *sourcesAdmin) handleRescore(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	src, err := a.repo.GetByID(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "load_failed", err.Error())
+		return
+	}
+	if src == nil {
+		writeError(w, http.StatusNotFound, "not_found", "source not found")
+		return
+	}
+	signals, err := a.repo.LoadSignals(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "load_signals_failed", err.Error())
+		return
+	}
+	sig, ok := signals[id]
+	if !ok {
+		writeError(w, http.StatusNotFound, "no_signals",
+			"source has no crawl_signals row yet — wait for the next refresh or trigger a crawl first")
+		return
+	}
+	now := time.Now().UTC()
+	score := freshness.Score(sig, 2, now)
+	minMin := src.MinIntervalMinutes
+	if minMin <= 0 {
+		minMin = 15
+	}
+	maxMin := src.MaxIntervalMinutes
+	if maxMin <= 0 {
+		maxMin = 10080
+	}
+	next := freshness.NextCrawlAt(score, now, minMin, maxMin)
+	if err := a.repo.UpdateScoreAndNextCrawl(r.Context(), id, score, next); err != nil {
+		writeError(w, http.StatusInternalServerError, "update_failed", err.Error())
+		return
+	}
+	logAction(r, "rescore", id)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":            true,
+		"id":            id,
+		"score":         score,
+		"next_crawl_at": next,
+	})
 }
 
 // ─────────────────────────────────────────────────────────────────────

@@ -156,6 +156,24 @@ export type SourceListItem = {
   status: string;
   country: string;
   health_score: number;
+  // Adaptive recrawl (Plan D3). Score is 0.0–1.0, 1.0 = crawl at
+  // min_interval. next_crawl_at is the scheduler's derived target.
+  // Optional because older API responses (pre-D3) may not include
+  // them; the UI falls back to existing fixed-interval columns.
+  score?: number;
+  next_crawl_at?: string;
+  min_interval_minutes?: number;
+  max_interval_minutes?: number;
+};
+
+// Response shape for POST /admin/sources/{id}/rescore. The handler
+// recomputes the freshness score from the latest crawl_signals view
+// and persists the derived next_crawl_at.
+export type RescoreResponse = {
+  ok: boolean;
+  id: string;
+  score: number;
+  next_crawl_at: string;
 };
 
 // Response wrapper for GET /admin/sources — the handler returns
@@ -265,6 +283,17 @@ export const listSources = async (limit: number = 100): Promise<SourceListItem[]
   );
   return res.sources;
 };
+
+// rescoreSource force-recomputes a source's freshness score +
+// next_crawl_at from the latest crawl_signals view. Useful when an
+// operator changes a source's min/max interval and wants the new
+// bounds applied immediately rather than waiting for the next
+// scheduler tick.
+export const rescoreSource = (id: string): Promise<RescoreResponse> =>
+  authRuntime().fetch<RescoreResponse>(
+    `/admin/sources/${encodeURIComponent(id)}/rescore`,
+    { method: 'POST' }
+  );
 
 // Per-source iterator checkpoint shape returned by GET /admin/checkpoints.
 // Mirrors pkg/repository.Checkpoint — cursor is the connector's own
