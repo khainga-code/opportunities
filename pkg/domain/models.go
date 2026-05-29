@@ -196,6 +196,14 @@ type Source struct {
 	// extraction prompt for this source. Empty for sources that don't
 	// need customization. Operator-editable via PUT /admin/sources/{id}.
 	ExtractionPromptExtension string `gorm:"type:text;not null;default:''" json:"extraction_prompt_extension"`
+
+	// FrontierEnabled opts a source into the URL-frontier path (D2).
+	// false (default) keeps the legacy per-source iterator behaviour;
+	// true routes discovery output through pkg/frontier so the
+	// frontier-worker fans out per-URL fetch + extract under shared
+	// per-host politeness windows. Operator-toggled via PUT
+	// /admin/sources/{id}.
+	FrontierEnabled bool `gorm:"not null;default:false" json:"frontier_enabled"`
 }
 
 func (Source) TableName() string { return "sources" }
