@@ -55,6 +55,7 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/connectors/workday"
 	"github.com/stawi-opportunities/opportunities/pkg/domain"
 	"github.com/stawi-opportunities/opportunities/pkg/freshness"
+	"github.com/stawi-opportunities/opportunities/pkg/frontier"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
 	"github.com/stawi-opportunities/opportunities/pkg/repository"
 	"github.com/stawi-opportunities/opportunities/pkg/sourceverify"
@@ -198,6 +199,13 @@ func registerSourcesAdmin(ctx context.Context, mux *http.ServeMux, cfg *apiConfi
 	checkpointRepo := repository.NewCheckpointRepository(pool.DB)
 	registerCheckpointAdmin(mux, checkpointRepo)
 	log.Info("source admin: /admin/checkpoints (GET/DELETE) wired")
+
+	// /admin/frontier — operator surface for the D2 URL frontier.
+	// Reuses the same Postgres pool. Read + requeue + delete only;
+	// the worker side (enqueue / dequeue) is its own service.
+	frontierRepo := frontier.NewAdminRepository(pool.DB)
+	registerFrontierAdmin(mux, frontierRepo)
+	log.Info("source admin: /admin/frontier wired")
 
 	// /admin/raw_payloads/{id}/body — operator pulls the original HTML
 	// from R2 for rejection drill-down. Wired only when R2 creds + the
@@ -433,6 +441,11 @@ type updateSourceRequest struct {
 	RequiredAttributesByKind  *map[string][]string `json:"required_attributes_by_kind"`
 	AutoApprove               *bool                `json:"auto_approve"`
 	ExtractionPromptExtension *string              `json:"extraction_prompt_extension"`
+	// FrontierEnabled is the D2 opt-in flag — flips the source's
+	// crawl path to the URL-frontier model. Default (unset) leaves
+	// the existing value alone; legacy direct-extract sources
+	// stay on the legacy path until the operator explicitly opts in.
+	FrontierEnabled *bool `json:"frontier_enabled"`
 }
 
 func (a *sourcesAdmin) handleUpdate(w http.ResponseWriter, r *http.Request) {
@@ -497,6 +510,9 @@ func (a *sourcesAdmin) handleUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		updates["extraction_prompt_extension"] = *req.ExtractionPromptExtension
+	}
+	if req.FrontierEnabled != nil {
+		updates["frontier_enabled"] = *req.FrontierEnabled
 	}
 	if len(updates) == 0 {
 		writeError(w, http.StatusBadRequest, "no_fields", "request had no editable fields")
