@@ -201,7 +201,16 @@ func (e *Extractor) Extract(ctx context.Context, html string, sourceKinds []stri
 	if sourceExtension != "" {
 		prompt += "\n\nAdditional instructions for THIS source:\n" + sourceExtension
 	}
-	raw, err := e.llm.Complete(ctx, prompt+"\n\nDocument:\n"+html)
+	// Cap the document at maxContentChars before the LLM call. Without
+	// this, a large listing/detail page (even after HTML→markdown
+	// cleanup upstream) overflows the model's context window —
+	// observed live: "request (232984 tokens) exceeds the available
+	// context size (4096 tokens)". The classify + embed paths already
+	// truncate to this bound; the main document path silently did not.
+	// A job posting's salient fields live near the top, so truncation
+	// costs little extraction quality and guarantees the request fits.
+	doc := truncateText(html, maxContentChars)
+	raw, err := e.llm.Complete(ctx, prompt+"\n\nDocument:\n"+doc)
 	if err != nil {
 		return nil, fmt.Errorf("extraction: %w", err)
 	}
