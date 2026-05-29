@@ -438,8 +438,16 @@ func (r *SourceRepository) ResetQualityWindowAll(ctx context.Context) (int64, er
 // call every scheduler tick because CONCURRENTLY never blocks reads.
 // The unique index on crawl_signals(source_id) is what makes
 // CONCURRENTLY viable — see migration _0071.
+//
+// PrepareStmt is disabled for this call because pgbouncer in
+// transaction-pooling mode collides on the cached statement name
+// across pooled connections (SQLSTATE 08P01). REFRESH MATERIALIZED
+// VIEW doesn't benefit from prepare-caching anyway, so the per-call
+// session override is free.
 func (r *SourceRepository) RefreshSignals(ctx context.Context) error {
-	return r.db(ctx, false).Exec("SELECT refresh_crawl_signals()").Error
+	return r.db(ctx, false).
+		Session(&gorm.Session{PrepareStmt: false}).
+		Exec("SELECT refresh_crawl_signals()").Error
 }
 
 // LoadSignals returns the latest rolling 7d signals for every source.
@@ -456,7 +464,11 @@ func (r *SourceRepository) LoadSignals(ctx context.Context) (map[string]freshnes
 		LastNewVariantAt *time.Time `gorm:"column:last_new_variant_at"`
 	}
 	var rows []signalRow
+	// PrepareStmt disabled — same pgbouncer collision as RefreshSignals.
+	// Per-call session override; the bulk scan doesn't benefit from
+	// prepare-caching anyway.
 	err := r.db(ctx, true).
+		Session(&gorm.Session{PrepareStmt: false}).
 		Raw(`SELECT source_id, crawls_7d, variants_7d, accepted_7d, rejected_7d, last_new_variant_at
              FROM crawl_signals`).Scan(&rows).Error
 	if err != nil {
