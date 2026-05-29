@@ -27,6 +27,7 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/domain"
 	eventsv1 "github.com/stawi-opportunities/opportunities/pkg/events/v1"
 	"github.com/stawi-opportunities/opportunities/pkg/extraction"
+	"github.com/stawi-opportunities/opportunities/pkg/frontier"
 	"github.com/stawi-opportunities/opportunities/pkg/geocode"
 	"github.com/stawi-opportunities/opportunities/pkg/normalize"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
@@ -320,6 +321,31 @@ func main() {
 	// stalling the crawl.
 	checkpointRepo := repository.NewCheckpointRepository(dbFn)
 
+	// URL frontier (D2) — discovered URLs from frontier-enabled
+	// sources land here; apps/frontier-worker pulls + fetches them.
+	// OnEnqueue wires the wake-up event so workers don't idle when
+	// new URLs land. Best-effort emit — a missed event still drains
+	// via the worker's heartbeat ticker.
+	urlFrontier := frontier.NewPostgresFrontier(dbFn)
+	urlFrontier.OnEnqueue = func(emitCtx context.Context, u frontier.URL) {
+		evtMgr := svc.EventsManager()
+		if evtMgr == nil {
+			return
+		}
+		env := eventsv1.NewEnvelope(eventsv1.TopicURLEnqueued, eventsv1.URLEnqueuedV1{
+			URLID:        u.URLID,
+			CanonicalURL: u.CanonicalURL,
+			Host:         u.Host,
+			SourceID:     u.SourceID,
+			Priority:     u.Priority,
+			DiscoveredAt: u.EnqueuedAt,
+		})
+		if err := evtMgr.Emit(emitCtx, eventsv1.TopicURLEnqueued, env); err != nil {
+			util.Log(emitCtx).WithError(err).WithField("url_id", u.URLID).
+				Warn("crawler: frontier enqueue wake-up emit failed")
+		}
+	}
+
 	crawlReqH := service.NewCrawlRequestHandler(service.CrawlRequestDeps{
 		Svc:               svc,
 		Sources:           sourceRepo,
@@ -334,6 +360,7 @@ func main() {
 		VariantStore:      variantStore,
 		CrawlRepo:         crawlRepo,
 		CheckpointRepo:    checkpointRepo,
+		Frontier:          urlFrontier,
 	})
 	pageDoneH := service.NewPageCompletedHandler(sourceRepo)
 	srcDiscH := service.NewSourceDiscoveredHandler(sourceRepo, reg)

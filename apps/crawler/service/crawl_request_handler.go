@@ -25,6 +25,7 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/domain"
 	eventsv1 "github.com/stawi-opportunities/opportunities/pkg/events/v1"
 	"github.com/stawi-opportunities/opportunities/pkg/extraction"
+	"github.com/stawi-opportunities/opportunities/pkg/frontier"
 	"github.com/stawi-opportunities/opportunities/pkg/normalize"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
 	"github.com/stawi-opportunities/opportunities/pkg/repository"
@@ -87,6 +88,16 @@ type CrawlRequestDeps struct {
 	// are written. Best-effort throughout: a Postgres outage degrades
 	// resumption to "always start fresh" rather than stalling the crawl.
 	CheckpointRepo *repository.CheckpointRepository
+
+	// Frontier wires the D2 URL-frontier path. When non-nil AND the
+	// source has FrontierEnabled=true, the crawl handler enqueues
+	// discovered URLs into the frontier instead of running the
+	// extract+emit pipeline in-line. The frontier-worker then handles
+	// the per-URL fetch + extract under per-host politeness.
+	//
+	// nil disables the path entirely — every source falls back to
+	// the legacy direct-extract behaviour regardless of the flag.
+	Frontier frontier.Frontier
 }
 
 // CrawlRequestHandler consumes jobs.crawl.requests.v1, runs the
@@ -310,6 +321,41 @@ func (h *CrawlRequestHandler) Execute(ctx context.Context, payload any) error {
 		}
 
 		pageItems := iter.Items()
+
+		// D2 — frontier branch. When the source has opted into the
+		// URL-frontier path (FrontierEnabled=true) AND the handler
+		// has a frontier wired, the iterator's items are treated as
+		// URL discoveries: enqueue them and short-circuit the
+		// per-URL fetch + extract + emit chain. The frontier-worker
+		// takes ownership from here under per-host politeness.
+		//
+		// Sources with FrontierEnabled=false (every source by
+		// default) flow through the legacy direct-extract path
+		// below — zero change in behaviour.
+		if src.FrontierEnabled && h.deps.Frontier != nil {
+			enqueued, skipped := h.enqueueFrontier(ctx, src, pageItems)
+			jobsFound += enqueued + skipped
+			jobsEmitted += enqueued
+			jobsRejected += skipped
+			// Cursor + checkpoint still propagate so the iterator
+			// resumes across redeliveries.
+			if cur := iter.Cursor(); cur != nil {
+				lastCursor = string(cur)
+			}
+			if h.deps.CheckpointRepo != nil {
+				if cpi, ok := iter.(connectors.CheckpointableIterator); ok {
+					if cp := cpi.Checkpoint(); cp != nil {
+						if putErr := h.deps.CheckpointRepo.Put(
+							ctx, src.ID, string(conn.Type()),
+							cp.Cursor, cp.PageIdx, cp.LastURL,
+						); putErr != nil {
+							log.WithError(putErr).Warn("crawl.request: checkpoint Put failed (frontier path)")
+						}
+					}
+				}
+			}
+			continue
+		}
 
 		// Enrich URL-only stubs (sitemap + universal AI link
 		// discovery) by fetching each detail page and running the
@@ -1012,4 +1058,72 @@ func (h *CrawlRequestHandler) reparse(ctx context.Context, req eventsv1.CrawlReq
 	_ = h.deps.CrawlRepo.IncrementReparseCount(ctx, rp.ID)
 	log.WithField("variant_id", eventPayload.VariantID).Info("reparse: re-emitted variant")
 	return nil
+}
+
+// enqueueFrontier walks the iterator's items and enqueues each
+// SourceURL into the URL frontier. Discovery-mode equivalent of
+// the variant-emit loop: instead of running enrichStubs + Verify
+// + emit, we hand the URL off to apps/frontier-worker which does
+// all of that per-URL under per-host politeness.
+//
+// Returns (enqueued, skipped) so the caller can fold them into
+// the page-completed counters (jobs_emitted + jobs_rejected).
+// Skipped covers items with no SourceURL (the discovery output
+// is meaningless without a URL to fetch) and any per-row Enqueue
+// errors. The whole batch never fails — a transient Postgres
+// error is logged and the page moves on; the next crawl tick
+// will re-enqueue. Duplicates are silently deduped by the
+// canonical_url_hash unique index in pkg/frontier.
+func (h *CrawlRequestHandler) enqueueFrontier(
+	ctx context.Context,
+	src *domain.Source,
+	items []domain.ExternalOpportunity,
+) (enqueued, skipped int) {
+	if h.deps.Frontier == nil || len(items) == 0 {
+		return 0, len(items)
+	}
+	log := util.Log(ctx).WithField("source_id", src.ID)
+
+	batch := make([]frontier.URL, 0, len(items))
+	for i := range items {
+		u := items[i].SourceURL
+		if u == "" {
+			u = items[i].ApplyURL
+		}
+		if u == "" {
+			skipped++
+			continue
+		}
+		host := frontier.HostOf(u)
+		if host == "" {
+			skipped++
+			continue
+		}
+		// Priority: source.score is in [0..1] already; treat 0.7
+		// weight on source-level signal + 0.3 weight on a
+		// neutral URL signal (no per-URL signals available yet).
+		// The frontier-worker re-reads the URL on Dequeue so the
+		// snapshot priority isn't load-bearing — it just steers
+		// fairness across hosts.
+		priority := src.Score*0.7 + 0.5*0.3
+		batch = append(batch, frontier.URL{
+			CanonicalURL: u,
+			Host:         host,
+			SourceID:     src.ID,
+			Priority:     priority,
+		})
+	}
+	if len(batch) == 0 {
+		return 0, skipped
+	}
+	results, err := h.deps.Frontier.Enqueue(ctx, batch)
+	if err != nil {
+		log.WithError(err).Warn("crawl.request: frontier enqueue had per-row errors")
+	}
+	enqueued = len(results)
+	skipped += len(batch) - len(results)
+	log.WithField("enqueued", enqueued).
+		WithField("skipped", skipped).
+		Info("crawl.request: enqueued URLs into frontier")
+	return enqueued, skipped
 }
