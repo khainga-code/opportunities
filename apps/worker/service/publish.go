@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pitabwire/frame"
+	"github.com/pitabwire/util"
 
 	eventsv1 "github.com/stawi-opportunities/opportunities/pkg/events/v1"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
@@ -68,7 +69,24 @@ func (h *PublishHandler) Execute(ctx context.Context, payload any) error {
 	spec := h.registry.Resolve(c.Kind)
 	key := publish.ObjectKey(spec.URLPrefix, c.Slug)
 	if err := h.publisher.UploadPublicSnapshot(ctx, key, snap); err != nil {
-		return fmt.Errorf("publish: upload: %w", err)
+		// CRITICAL: R2 publish failures must NOT propagate to the shared
+		// events consumer. Returning the error here Nacks the message,
+		// and because all five pipeline stages multiplex onto ONE NATS
+		// consumer with no app-level max-deliver/DLQ, an R2 outage turns
+		// into an infinite-redelivery Nack-storm that back-pressures and
+		// starves every other stage (the ~18h "0 published" incident).
+		//
+		// Instead: log WARN, record the error against the canonical's
+		// variants for the ledger, and ACK (return nil). The variants
+		// stay at `canonical` (NOT advanced to `published`); the reaper
+		// re-drives them once R2 is healthy again.
+		wrapped := fmt.Errorf("publish: upload: %w", err)
+		util.Log(ctx).WithError(wrapped).
+			WithField("canonical_id", c.OpportunityID).
+			WithField("key", key).
+			Warn("publish: R2 upload failed; acking to protect shared consumer, reaper will re-drive")
+		_ = h.store.RecordErrorByCanonical(ctx, c.OpportunityID, variantstate.StageCanonical, wrapped)
+		return nil
 	}
 
 	out := eventsv1.PublishedV1{
