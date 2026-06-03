@@ -1,3 +1,7 @@
+import { StrictMode, type ComponentType, Suspense } from "react";
+import { createRoot } from "react-dom/client";
+import { AppProviders } from "@/providers/AppProviders";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { StrictMode, type ComponentType, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppProviders } from '@/providers/AppProviders';
@@ -40,9 +44,11 @@ async function hydrate(island: Island, el: HTMLElement) {
   createRoot(el).render(
     <StrictMode>
       <AppProviders>
-        <Suspense fallback={null}>
-          <Component />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <Component />
+          </Suspense>
+        </ErrorBoundary>
       </AppProviders>
     </StrictMode>
   );

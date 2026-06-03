@@ -1,3 +1,6 @@
+import { useEffect, useMemo } from "react";
+import Cascade from "./Cascade";
+import { useCandidateProfile } from "@/hooks/useCandidateProfile";
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Cascade from './Cascade';
@@ -30,6 +33,7 @@ export default function LocaleShard() {
     };
   }, [country, languages]);
 
+  const { preferredCountries, preferredLanguages } = useCandidateProfile();
   const auth = useAuth();
   const profile = useQuery({
     queryKey: ['candidate-profile'],
@@ -98,10 +102,3 @@ function ShardStatusBanner({
   );
 }
 
-function splitCSV(csv: string | undefined | null): string[] {
-  if (!csv) return [];
-  return csv
-    .split(/[,;]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}

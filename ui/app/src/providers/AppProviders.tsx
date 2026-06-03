@@ -1,3 +1,9 @@
+import { useEffect, type ReactNode } from "react";
+import { QueryProvider } from "./QueryProvider";
+import { AuthProvider } from "./AuthProvider";
+import { ToastProvider } from "./ToastProvider";
+import { I18nProvider } from "@/i18n/I18nProvider";
+import { initPostHog } from "@/analytics/posthog";
 import { useEffect, type ReactNode } from 'react';
 import { QueryProvider } from './QueryProvider';
 import { AuthProvider } from './AuthProvider';
@@ -31,7 +37,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <QueryProvider>
-        <I18nProvider>{children}</I18nProvider>
+        <ToastProvider>
+          <I18nProvider>{children}</I18nProvider>
+        </ToastProvider>
       </QueryProvider>
     </AuthProvider>
   );
