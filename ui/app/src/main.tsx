@@ -32,37 +32,3 @@ const islands: Island[] = [
   { id: 'mount-category-index', component: () => import('@/components/CategoryIndex') },
   { id: 'mount-category-page', component: () => import('@/components/CategoryPage') },
   { id: 'mount-dashboard', component: () => import('@/pages/Dashboard') },
-  { id: 'mount-onboarding', component: () => import('@/pages/Onboarding') },
-  { id: 'mount-auth-callback', component: () => import('@/components/AuthCallback') },
-  { id: 'mount-footer', component: () => import('@/components/Footer') },
-  { id: 'mount-get-started-cta', component: () => import('@/components/GetStartedCta') },
-];
-
-async function hydrate(island: Island, el: HTMLElement) {
-  const mod = await island.component();
-  const Component = mod.default;
-  createRoot(el).render(
-    <StrictMode>
-      <AppProviders>
-        <ErrorBoundary>
-          <Suspense fallback={null}>
-            <Component />
-          </Suspense>
-        </ErrorBoundary>
-      </AppProviders>
-    </StrictMode>
-  );
-}
-
-function boot() {
-  for (const island of islands) {
-    const el = document.getElementById(island.id);
-    if (el) void hydrate(island, el);
-  }
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', boot);
-} else {
-  boot();
-}
