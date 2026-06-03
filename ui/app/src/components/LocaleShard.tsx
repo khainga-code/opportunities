@@ -19,34 +19,3 @@ export default function LocaleShard() {
         .split(',')
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
-    [langsCSV]
-  );
-
-  useEffect(() => {
-    if (!country) return;
-    const meta = document.createElement('meta');
-    meta.name = 'visitor-locale';
-    meta.content = JSON.stringify({ country, languages });
-    document.head.appendChild(meta);
-    return () => {
-      meta.remove();
-    };
-  }, [country, languages]);
-
-  const { preferredCountries, preferredLanguages } = useCandidateProfile();
-  const auth = useAuth();
-  const profile = useQuery({
-    queryKey: ['candidate-profile'],
-    queryFn: fetchCandidate,
-    enabled: auth.state === 'authenticated',
-    staleTime: 5 * 60_000,
-  });
-  const preferredCountries = useMemo(
-    () => splitCSV(profile.data?.preferred_countries),
-    [profile.data?.preferred_countries]
-  );
-  const preferredLanguages = useMemo(
-    () => splitCSV(profile.data?.languages),
-    [profile.data?.languages]
-  );
-

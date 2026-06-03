@@ -19,16 +19,3 @@ const islands: Island[] = [
   { id: 'mount-nav', component: () => import('@/components/Nav') },
   { id: 'mount-home-redirect', component: () => import('@/components/HomeRedirect') },
   // All five opportunity kinds share the same React island; the kind is
-  // derived from window.location.pathname inside OpportunityDetail.
-  { id: 'mount-job-detail', component: () => import('@/components/OpportunityDetail') },
-  { id: 'mount-scholarship-detail', component: () => import('@/components/OpportunityDetail') },
-  { id: 'mount-tender-detail', component: () => import('@/components/OpportunityDetail') },
-  { id: 'mount-deal-detail', component: () => import('@/components/OpportunityDetail') },
-  { id: 'mount-funding-detail', component: () => import('@/components/OpportunityDetail') },
-  { id: 'mount-search', component: () => import('@/components/Search') },
-  { id: 'mount-job-list', component: () => import('@/components/JobList') },
-  { id: 'mount-locale-shard', component: () => import('@/components/LocaleShard') },
-  { id: 'mount-signup-cta', component: () => import('@/components/SignupCta') },
-  { id: 'mount-category-index', component: () => import('@/components/CategoryIndex') },
-  { id: 'mount-category-page', component: () => import('@/components/CategoryPage') },
-  { id: 'mount-dashboard', component: () => import('@/pages/Dashboard') },
