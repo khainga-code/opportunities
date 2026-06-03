@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import Cascade from "./Cascade";
-import { useAuth } from "@/providers/AuthProvider";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCandidate } from "@/api/candidates";
+import { useAuth } from '@/providers/AuthProvider';
+import { useQuery } from '@tanstack/react-query';
+import { fetchCandidate } from '@/api/candidates';
+import type { FeedParams } from "@/types/search";
 
 type FilterChip = { label: string; key: "remote_type" | "employment_type" | "seniority"; value: string };
 
@@ -20,18 +21,6 @@ export default function JobList() {
   const auth = useAuth();
   const authed = auth.state === 'authenticated';
   const [active, setActive] = useState<Partial<Record<FilterChip["key"], string>>>({});
-
-  function toggle(chip: FilterChip) {
-    setActive((prev) => {
-      const current = prev[chip.key];
-      if (current === chip.value) {
-        const next = { ...prev };
-        delete next[chip.key];
-        return next;
-      }
-      return { ...prev, [chip.key]: chip.value };
-    });
-  }
 
   // Pull the candidate profile only if authenticated — its country /
   // language preferences drive the "preferred" tier. One lightweight
@@ -52,11 +41,24 @@ export default function JobList() {
     [profile.data?.languages]
   );
 
-  const hasFilters = Object.keys(active).length > 0;
-  const filters = useMemo(
+  function toggle(chip: FilterChip) {
+    setActive((prev) => {
+      const current = prev[chip.key];
+      if (current === chip.value) {
+        const next = { ...prev };
+        delete next[chip.key];
+        return next;
+      }
+      return { ...prev, [chip.key]: chip.value };
+    });
+  }
+
+  const filters = useMemo<FeedParams>(
     () => ({ sort: "recent", ...active }),
     [active],
   );
+
+  const hasFilters = Object.keys(active).length > 0;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

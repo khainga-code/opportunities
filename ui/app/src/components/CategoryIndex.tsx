@@ -86,7 +86,7 @@ export default function CategoryIndex() {
         </div>
       )}
 
-      {/* Opportunity types — always shown */}
+      {/* Opportunity types section */}
       <div className="mt-14">
         <h2 className="text-xl font-semibold text-gray-900">Opportunity types</h2>
         <p className="mt-1 text-sm text-gray-500">Choose the kind of opportunity you are looking for.</p>

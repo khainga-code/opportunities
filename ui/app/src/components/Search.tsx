@@ -1,15 +1,14 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useMemo, type ReactNode } from "react";
 import type { Facets, SearchParams, FacetEntry } from "@/types/search";
-import { useAuth } from "@/providers/AuthProvider";
-import { useI18n } from "@/i18n/I18nProvider";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCandidate } from "@/api/candidates";
-import { categoryLabel } from "@/utils/format";
-import { useMemo } from "react";
+import { useQuery } from '@tanstack/react-query';
+import { categoryLabel } from '@/utils/format';
+import { fetchCandidate } from '@/api/candidates';
+import { useAuth } from '@/providers/AuthProvider';
+import { useI18n } from '@/i18n/I18nProvider';
 import Cascade from "./Cascade";
 
 /**
- * /search/ — query + filters + facets + pagination. Reads initial state
+ * /search/ – query + filters + facets + pagination. Reads initial state
  * from the URL so deep links are shareable; writes back on changes via
  * history.replaceState so the back button stays predictable without full
  * navigations.
