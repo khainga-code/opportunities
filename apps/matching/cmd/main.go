@@ -12,27 +12,28 @@ import (
 	"time"
 
 	"github.com/pitabwire/frame"
+	frameclient "github.com/pitabwire/frame/client"
 	fconfig "github.com/pitabwire/frame/config"
 	"github.com/pitabwire/frame/datastore"
 	"github.com/pitabwire/frame/security"
-	frameclient "github.com/pitabwire/frame/client"
 	"github.com/pitabwire/util"
 	"github.com/rs/xid"
 
 	candidatesconfig "github.com/stawi-opportunities/opportunities/apps/matching/config"
 	adminv1 "github.com/stawi-opportunities/opportunities/apps/matching/service/admin/v1"
 	eventv1 "github.com/stawi-opportunities/opportunities/apps/matching/service/events/v1"
-	httpv1 "github.com/stawi-opportunities/opportunities/apps/matching/service/http/v1"
 	meV1 "github.com/stawi-opportunities/opportunities/apps/matching/service/http/me/v1"
-	matchingv1 "github.com/stawi-opportunities/opportunities/apps/matching/service/matching/v1"
+	httpv1 "github.com/stawi-opportunities/opportunities/apps/matching/service/http/v1"
 	matchersreg "github.com/stawi-opportunities/opportunities/apps/matching/service/matchers"
 	dealm "github.com/stawi-opportunities/opportunities/apps/matching/service/matchers/deal"
 	fundingm "github.com/stawi-opportunities/opportunities/apps/matching/service/matchers/funding"
 	jobm "github.com/stawi-opportunities/opportunities/apps/matching/service/matchers/job"
 	scholarshipm "github.com/stawi-opportunities/opportunities/apps/matching/service/matchers/scholarship"
 	tenderm "github.com/stawi-opportunities/opportunities/apps/matching/service/matchers/tender"
+	matchingv1 "github.com/stawi-opportunities/opportunities/apps/matching/service/matching/v1"
 	"github.com/stawi-opportunities/opportunities/pkg/applications"
 	"github.com/stawi-opportunities/opportunities/pkg/archive"
+	"github.com/stawi-opportunities/opportunities/pkg/billing"
 	"github.com/stawi-opportunities/opportunities/pkg/candidatestore"
 	"github.com/stawi-opportunities/opportunities/pkg/cv"
 	"github.com/stawi-opportunities/opportunities/pkg/definitions"
@@ -45,6 +46,7 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
 	"github.com/stawi-opportunities/opportunities/pkg/repository"
 	"github.com/stawi-opportunities/opportunities/pkg/savedjobs"
+	"github.com/stawi-opportunities/opportunities/pkg/services"
 	"github.com/stawi-opportunities/opportunities/pkg/telemetry"
 )
 
@@ -163,9 +165,9 @@ func main() {
 			cfg.EmbeddingBaseURL, cfg.EmbeddingModel, cfg.EmbeddingAPIKey,
 			"", "")
 		extractor = extraction.New(extraction.Config{
-			BaseURL:          infBase,
-			APIKey:           infKey,
-			Model:            infModel,
+			BaseURL:             infBase,
+			APIKey:              infKey,
+			Model:               infModel,
 			EmbeddingBaseURL:    embBase,
 			EmbeddingAPIKey:     embKey,
 			EmbeddingModel:      embModel,
@@ -327,12 +329,12 @@ func main() {
 
 		if cfg.MatchingFanoutEnabled {
 			fanout := matchingv1.NewFanOutConsumer(matchingv1.FanOutConsumerDeps{
-				Store:    matchStore,
-				EventLog: matchEvents,
-				KNN:      matchKNN,
-				Reranker: rerank,
-				Weights:  matching.DefaultWeights(),
-				DLQ:      dlq,
+				Store:     matchStore,
+				EventLog:  matchEvents,
+				KNN:       matchKNN,
+				Reranker:  rerank,
+				Weights:   matching.DefaultWeights(),
+				DLQ:       dlq,
 				OppEmbedQ: matchingv1.NewSQLOppEmbeddingQuery(sqlDB),
 				// Phase 5: daily-cap enforcement via the continuous aggregate.
 				DailyCap: matching.NewPGDailyCapQuery(sqlDB),
@@ -522,6 +524,89 @@ func main() {
 	mux.Handle("POST /me/applications", authMW(
 		httpv1.ApplicationsHandler(httpv1.ApplicationsDeps{Starter: appStarter}),
 	))
+
+	// --- Billing / payments + subscription ---------------------------------
+	// The gateway strips /matching, so the UI's /billing/* calls land here.
+	//   GET  /billing/plans            (public)  — plan catalog
+	//   POST /billing/checkout         (auth'd)  — start a payment
+	//   GET  /billing/checkout/status  (auth'd)  — poll a checkout
+	//   POST /billing/webhook          (public)  — service-payment callback
+	//   POST /_admin/billing/reconcile (Trustage)— reconcile pending checkouts
+	//
+	// Construct the payment gateway from BILLING_SERVICE_URI via
+	// services.NewClients (co-deployed service-payment + service-billing pod,
+	// dialled with the service_payment OAuth audience). When the URI is unset
+	// the NopGateway keeps /billing/plans working and degrades checkout to a
+	// 503 so the binary still boots in dev/test.
+	var billingGateway billing.Gateway = billing.NopGateway{}
+	clients, clientsErr := services.NewClients(ctx, &cfg, services.ClientConfig{
+		BillingURI: cfg.BillingServiceURI,
+		HTTPClient: svc.HTTPClientManager().Client(ctx),
+	})
+	if clientsErr != nil {
+		// NewClients records the first init error but still returns the
+		// partially-populated set; a nil Payment client just means we stay
+		// on the NopGateway. Log and continue rather than fail boot.
+		log.WithError(clientsErr).Warn("billing: service client init reported an error; checkout may be degraded")
+	}
+	if clients != nil && clients.Payment != nil {
+		billingGateway = billing.NewPaymentGateway(clients.Payment)
+		log.WithField("uri", cfg.BillingServiceURI).Info("billing: payment gateway enabled")
+	} else {
+		log.Warn("billing: BILLING_SERVICE_URI unset or payment client unavailable — checkout degraded (plans still served)")
+	}
+
+	// Checkout ledger + activation share one *sql.DB-backed store. When the
+	// pool is unavailable the routes still register but persistence/activation
+	// degrade (the gateway calls still work; the reconciler/poller can't
+	// resolve rows).
+	var checkoutStore *billing.Store
+	var billingActivator *billing.Activator
+	if gdb := dbFn(ctx, false); gdb != nil {
+		if sqlDB, dbErr := gdb.DB(); dbErr == nil {
+			checkoutStore = billing.NewStore(sqlDB)
+			billingActivator = billing.NewActivator(checkoutStore, candidateRepo)
+		} else {
+			log.WithError(dbErr).Warn("billing: sql.DB unwrap failed; checkout persistence + activation disabled")
+		}
+	}
+
+	mux.HandleFunc("GET /billing/plans", httpv1.PlansHandler())
+	mux.Handle("POST /billing/checkout", authMW(
+		httpv1.CheckoutHandler(httpv1.CheckoutDeps{
+			Gateway: billingGateway,
+			Store:   checkoutStore,
+		}),
+	))
+	mux.Handle("GET /billing/checkout/status", authMW(
+		httpv1.CheckoutStatusHandler(httpv1.CheckoutStatusDeps{
+			Gateway:   billingGateway,
+			Store:     checkoutStore,
+			Activator: billingActivator,
+		}),
+	))
+	// Webhook is unauthenticated (the provider carries no candidate JWT);
+	// it verifies the optional HMAC signature instead.
+	mux.HandleFunc("POST /billing/webhook", httpv1.WebhookHandler(httpv1.WebhookDeps{
+		Activator: billingActivator,
+		Secret:    cfg.BillingWebhookSecret,
+	}))
+	// Trustage-driven reconciler sweep — the safety net behind the webhook.
+	if checkoutStore != nil && billingActivator != nil {
+		billingReconciler := billing.NewReconciler(checkoutStore, billingGateway, billingActivator, cfg.BillingReconcileBatch)
+		mux.HandleFunc("POST /_admin/billing/reconcile", func(w http.ResponseWriter, r *http.Request) {
+			res, recErr := billingReconciler.Run(r.Context())
+			if recErr != nil {
+				log.WithError(recErr).Error("_admin/billing/reconcile: sweep failed")
+				httpmw.ProblemJSON(w, http.StatusBadGateway, "reconcile_failed", "billing reconcile sweep failed")
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(res)
+		})
+	} else {
+		log.Warn("_admin/billing/reconcile: store/activator unavailable; reconcile route not registered")
+	}
 
 	// --- Trustage admin endpoints ---
 	mux.HandleFunc("POST /_admin/cv/stale_nudge",

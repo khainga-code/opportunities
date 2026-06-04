@@ -115,4 +115,18 @@ type CandidatesConfig struct {
 	MatchingRerankerConcurrency    int `env:"MATCHING_RERANKER_CONCURRENCY"     envDefault:"8"`
 	// Phase-4 extension-facing /api/me/* routes (spec §5.5).
 	MatchingExtensionEnabled bool `env:"MATCHING_EXTENSION_ENABLED" envDefault:"false"`
+
+	// Billing / payments. BillingServiceURI points at the co-deployed
+	// service-payment + service-billing pod (set live to
+	// http://service-payment.finance.svc:80). When empty the billing
+	// routes serve the plan catalog + degrade checkout to a 503 (NopGateway)
+	// so the binary still boots without a payment backend in dev/test.
+	BillingServiceURI string `env:"BILLING_SERVICE_URI" envDefault:""`
+	// BillingWebhookSecret enables HMAC-SHA256 verification of the
+	// service-payment completion webhook (X-Payment-Signature header over
+	// the raw body). Empty disables verification (dev/test only).
+	BillingWebhookSecret string `env:"BILLING_WEBHOOK_SECRET" envDefault:""`
+	// BillingReconcileBatch bounds how many pending checkouts one
+	// POST /_admin/billing/reconcile sweep examines.
+	BillingReconcileBatch int `env:"BILLING_RECONCILE_BATCH" envDefault:"200"`
 }
