@@ -404,11 +404,20 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string][]string{"enabled_kinds": kinds})
 	})
-	mux.HandleFunc("POST /candidates/cv/upload", httpv1.UploadHandler(httpv1.UploadDeps{
+	uploadDeps := httpv1.UploadDeps{
 		Svc:     svc,
 		Archive: arch,
 		Text:    textExtractor{},
-	}))
+	}
+	mux.HandleFunc("POST /candidates/cv/upload", httpv1.UploadHandler(uploadDeps))
+
+	// PUT /me/cv — the dashboard CV upload. The gateway strips the
+	// /matching prefix → PUT /me/cv. The auth-runtime upload() helper
+	// sends the CV as a multipart "file" part (method PUT); the handler
+	// derives the candidate from the JWT subject and runs the SAME
+	// archive → cv-extract → cv-embed → CandidateEmbeddingV1 → gap-fill
+	// pipeline as POST /candidates/cv/upload.
+	mux.Handle("PUT /me/cv", authMW(httpv1.MeCVHandler(uploadDeps)))
 	mux.HandleFunc("POST /candidates/preferences", httpv1.PreferencesHandler(svc))
 	mux.HandleFunc("GET /candidates/match", httpv1.MatchHandler(httpv1.MatchDeps{
 		Svc:    svc,
@@ -455,7 +464,13 @@ func main() {
 	// the checkout the wizard kicked off completes.
 	onboardStore := &candidateOnboardAdapter{repo: candidateRepo}
 	mux.Handle("POST /candidates/onboard", authMW(
-		httpv1.CandidatesOnboardHandler(httpv1.CandidatesOnboardDeps{Store: onboardStore}),
+		httpv1.CandidatesOnboardHandler(httpv1.CandidatesOnboardDeps{
+			Store: onboardStore,
+			// Best-effort initial-match trigger: emits PreferencesUpdatedV1
+			// so the PreferenceMatchHandler gives a freshly-onboarded
+			// candidate gap-fill matches even before/without a CV.
+			Match: &onboardMatchTrigger{svc: svc},
+		}),
 	))
 
 	// /me/saved-jobs — star/unstar. Both verbs share the same handler;
@@ -526,6 +541,45 @@ func main() {
 			JobLimit: 10,
 		}))
 
+	// POST /_admin/matches/weekly_digest — Monday-morning Trustage cron.
+	// Re-runs the gap-fill match pipeline for every ACTIVE candidate so
+	// each gets refreshed candidate_matches + a candidates.matches.ready.v1
+	// envelope for the notification service. Skip-wires gracefully if the
+	// DB pool is unavailable (route not registered → cron logs a 404,
+	// same degraded behaviour as the other DB-gated routes).
+	if gdb := dbFn(ctx, false); gdb != nil {
+		if sqlDB, dbErr := gdb.DB(); dbErr == nil {
+			activeLister := adminv1.NewRepoActiveCandidateLister(
+				func(ctx context.Context, limit int) ([]string, error) {
+					rows, lErr := candidateRepo.ListActive(ctx, limit)
+					if lErr != nil {
+						return nil, lErr
+					}
+					ids := make([]string, 0, len(rows))
+					for _, c := range rows {
+						ids = append(ids, c.ID)
+					}
+					return ids, nil
+				}, 5000)
+			mux.HandleFunc("POST /_admin/matches/weekly_digest",
+				adminv1.MatchesWeeklyDigestHandler(adminv1.MatchesWeeklyDigestDeps{
+					Svc:      svc,
+					Active:   activeLister,
+					Index:    matching.NewIndexStore(sqlDB),
+					KNN:      matching.NewKNN(sqlDB),
+					Store:    matching.NewStore(sqlDB),
+					EventLog: matching.NewEventLog(sqlDB),
+					Reranker: matching.NoopReranker{},
+					Weights:  matching.DefaultWeights(),
+					Since:    30 * 24 * time.Hour,
+				}))
+		} else {
+			log.WithError(dbErr).Warn("_admin/matches/weekly_digest: sql.DB unwrap failed; route not registered")
+		}
+	} else {
+		log.Warn("_admin/matches/weekly_digest: DB pool unavailable; route not registered")
+	}
+
 	// --- Phase-4 extension-facing /api/me/* routes (flag-gated per spec §5.5) ---
 	if cfg.MatchingExtensionEnabled {
 		// Open *sql.DB for the new pkg/matching stores. The same pattern
@@ -588,6 +642,34 @@ type queuePublisherAdapter struct{ svc *frame.Service }
 
 func (a *queuePublisherAdapter) Publish(ctx context.Context, subject string, payload []byte) error {
 	return a.svc.QueueManager().Publish(ctx, subject, payload)
+}
+
+// onboardMatchTrigger satisfies httpv1.OnboardMatchTrigger by emitting a
+// PreferencesUpdatedV1 event onto the preferences-updated topic. The
+// PreferenceMatchHandler (a Frame Events subscriber) consumes it and runs
+// the match pipeline for each opted-in kind, so a candidate gets initial
+// gap-fill matches immediately after onboarding — even before a CV lands.
+//
+// OptIns is keyed by the candidate's selected kinds (empty job_types →
+// fall back to "job"); the values are empty JSON objects since onboarding
+// doesn't collect kind-specific preference blobs yet.
+type onboardMatchTrigger struct{ svc *frame.Service }
+
+func (t *onboardMatchTrigger) TriggerInitialMatch(ctx context.Context, candidateID string, kinds []string) error {
+	if len(kinds) == 0 {
+		kinds = []string{"job"}
+	}
+	optIns := make(map[string]json.RawMessage, len(kinds))
+	for _, k := range kinds {
+		optIns[k] = json.RawMessage(`{}`)
+	}
+	payload := eventsv1.PreferencesUpdatedV1{
+		CandidateID: candidateID,
+		OptIns:      optIns,
+		UpdatedAt:   time.Now().UTC(),
+	}
+	env := eventsv1.NewEnvelope(eventsv1.TopicCandidatePreferencesUpdated, payload)
+	return t.svc.EventsManager().Emit(ctx, eventsv1.TopicCandidatePreferencesUpdated, env)
 }
 
 type textExtractor struct{}
