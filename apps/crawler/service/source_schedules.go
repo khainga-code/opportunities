@@ -151,7 +151,7 @@ func EnsureSourceSchedule(ctx context.Context, client WorkflowClient, s *domain.
 		if aerr := ArchiveWorkflowByName(ctx, client, name); aerr != nil {
 			return aerr
 		}
-		id = "" // fall through to create
+		// fall through to create at the new cadence
 	} else if id != "" {
 		if cron == desiredCron {
 			return activate(ctx, client, name, id) // draft at the right cadence → activate
@@ -159,7 +159,7 @@ func EnsureSourceSchedule(ctx context.Context, client WorkflowClient, s *domain.
 		if aerr := ArchiveWorkflowByName(ctx, client, name); aerr != nil {
 			return aerr
 		}
-		id = ""
+		// fall through to create at the new cadence
 	}
 
 	dsl, err := buildSourceCrawlDSL(s, crawlBaseURL)
