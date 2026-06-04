@@ -10,7 +10,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "node ../scripts/prune-stray-go.cjs"
   },
   "dependencies": {
     "@stawi/auth-runtime": "^1.3.0",

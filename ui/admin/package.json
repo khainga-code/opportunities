@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "node ../scripts/prune-stray-go.cjs"
   },
   "dependencies": {
     "@stawi/auth-runtime": "^1.3.0",
