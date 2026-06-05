@@ -125,6 +125,15 @@ func main() {
 		if err := repository.FinalizeSchema(migrationDB); err != nil {
 			log.WithError(err).Fatal("finalize schema failed")
 		}
+		// Create the raw-SQL OLTP serving tables (applications,
+		// application_notes/attachments/reminders, idempotency_keys,
+		// candidate_saved_jobs, candidate_checkouts). AutoMigrate doesn't
+		// own these — they were historically applied to prod by hand — so a
+		// fresh DB would be missing them and break the tracking feed, apply,
+		// save, and billing flows. Idempotent (all IF NOT EXISTS).
+		if err := repository.EnsureServingTables(ctx, migrationDB); err != nil {
+			log.WithError(err).Fatal("ensure serving tables failed")
+		}
 		log.Info("migration complete")
 		return
 	}
