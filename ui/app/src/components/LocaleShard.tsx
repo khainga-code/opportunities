@@ -1,6 +1,7 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Cascade from "./Cascade";
 import { useCandidateProfile } from "@/hooks/useCandidateProfile";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function LocaleShard() {
   const mount = useMemo(() => document.getElementById('mount-locale-shard'), []);
