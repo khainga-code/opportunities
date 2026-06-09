@@ -32,6 +32,12 @@ type SourceHealthRepo interface {
 // group (its slowness never back-pressures fetches).
 type PageCompletedHandler struct {
 	repo SourceHealthRepo
+
+	// EmitRegenerate, when non-nil, is invoked from the high-reject-rate
+	// branch to trigger a recipe regeneration for drift recovery. Only
+	// called for recipe-driven sources (ExtractionRecipe set). nil disables
+	// the drift trigger entirely (e.g. when RECIPE_ENABLED is off).
+	EmitRegenerate func(ctx context.Context, sourceID, reason string)
 }
 
 // NewPageCompletedHandler wires the handler.
@@ -112,6 +118,12 @@ func (h *PageCompletedHandler) Execute(ctx context.Context, payload any) error {
 		}
 		if err := h.repo.UpdateNextCrawl(ctx, src.ID, next, now, src.HealthScore); err != nil {
 			log.WithError(err).Warn("page-completed: UpdateNextCrawl failed (tuning path)")
+		}
+		// Drift recovery: if this is a recipe-driven source, kick off a
+		// regeneration rather than waiting for an operator to clear the
+		// needs_tuning flag manually. No-op when the trigger is unwired.
+		if h.EmitRegenerate != nil && src.ExtractionRecipe != "" && src.ExtractionRecipe != "{}" {
+			h.EmitRegenerate(ctx, src.ID, "drift: high reject rate")
 		}
 
 	default:

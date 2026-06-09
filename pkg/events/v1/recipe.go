@@ -12,6 +12,11 @@ type RecipeGenerateV1 struct {
 	// SourceID is the sources.id of the source that needs a recipe.
 	SourceID string `json:"source_id"`
 
+	// SampleURLs are detail-page URLs the generator should fetch and
+	// learn the recipe from. When empty the handler falls back to the
+	// source's BaseURL.
+	SampleURLs []string `json:"sample_urls,omitempty"`
+
 	// Reason is a short human-readable label for observability (e.g.
 	// "onboarding", "manual_trigger"). Not acted on programmatically.
 	Reason string `json:"reason,omitempty"`
