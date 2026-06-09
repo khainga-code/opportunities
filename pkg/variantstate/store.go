@@ -32,6 +32,8 @@ import (
 	"github.com/pitabwire/util"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/stawi-opportunities/opportunities/pkg/domain"
 )
 
 // strconvAppendFloat32 wraps strconv.AppendFloat with the right bitSize
@@ -74,15 +76,15 @@ func nullStr(p *string) any {
 
 // Stage values match the migration's expected current_stage strings.
 const (
-	StageIngested    = "ingested"
-	StageNormalized  = "normalized"
-	StageValidated   = "validated"
-	StageClustered   = "clustered"
-	StageCanonical   = "canonical"
-	StagePublished   = "published"
-	StageManticore   = "manticore" // legacy; remove once Manticore decommissioned
-	StageFlagged     = "flagged"
-	StageRejected    = "rejected"
+	StageIngested   = "ingested"
+	StageNormalized = "normalized"
+	StageValidated  = "validated"
+	StageClustered  = "clustered"
+	StageCanonical  = "canonical"
+	StagePublished  = "published"
+	StageManticore  = "manticore" // legacy; remove once Manticore decommissioned
+	StageFlagged    = "flagged"
+	StageRejected   = "rejected"
 	// StageEmbed is a side-channel stage label used only by the embed
 	// queue worker's attempts ledger. It is NOT a current_stage value —
 	// embedding runs off the canonical fan-out and never advances
@@ -107,27 +109,27 @@ const (
 // AutoMigrate is unnecessary (the SQL Job owns the schema; this
 // struct is read-write only).
 type Variant struct {
-	VariantID       string         `gorm:"primaryKey;column:variant_id"`
-	IngestedAt      time.Time      `gorm:"primaryKey;column:ingested_at;not null;default:now()"`
-	SourceID        string         `gorm:"column:source_id;not null"`
-	HardKey         string         `gorm:"column:hard_key;not null"`
-	Kind            string         `gorm:"column:kind;not null"`
-	CurrentStage    string         `gorm:"column:current_stage;not null;default:ingested"`
-	CanonicalID     *string        `gorm:"column:canonical_id"`
-	Slug            *string        `gorm:"column:slug"`
-	RawContentHash  *string        `gorm:"column:raw_content_hash"`
+	VariantID      string    `gorm:"primaryKey;column:variant_id"`
+	IngestedAt     time.Time `gorm:"primaryKey;column:ingested_at;not null;default:now()"`
+	SourceID       string    `gorm:"column:source_id;not null"`
+	HardKey        string    `gorm:"column:hard_key;not null"`
+	Kind           string    `gorm:"column:kind;not null"`
+	CurrentStage   string    `gorm:"column:current_stage;not null;default:ingested"`
+	CanonicalID    *string   `gorm:"column:canonical_id"`
+	Slug           *string   `gorm:"column:slug"`
+	RawContentHash *string   `gorm:"column:raw_content_hash"`
 	// RawPayloadID + CrawlJobID forward-link a variant row to the
 	// audit ledger written by the crawler (raw_payloads / crawl_jobs).
 	// Both nullable because (a) the rejected-variant path writes a row
 	// before either link is meaningful, and (b) tests construct
 	// variants without a backing crawl.
-	RawPayloadID    *string        `gorm:"column:raw_payload_id"`
-	CrawlJobID      *string        `gorm:"column:crawl_job_id"`
-	StageAt         time.Time      `gorm:"column:stage_at;not null;default:now()"`
-	Attempts        map[string]any `gorm:"column:attempts;type:jsonb;serializer:json"`
-	LastError       *string        `gorm:"column:last_error"`
-	CreatedAt       time.Time      `gorm:"column:created_at;not null;default:now()"`
-	UpdatedAt       time.Time      `gorm:"column:updated_at;not null;default:now()"`
+	RawPayloadID *string        `gorm:"column:raw_payload_id"`
+	CrawlJobID   *string        `gorm:"column:crawl_job_id"`
+	StageAt      time.Time      `gorm:"column:stage_at;not null;default:now()"`
+	Attempts     map[string]any `gorm:"column:attempts;type:jsonb;serializer:json"`
+	LastError    *string        `gorm:"column:last_error"`
+	CreatedAt    time.Time      `gorm:"column:created_at;not null;default:now()"`
+	UpdatedAt    time.Time      `gorm:"column:updated_at;not null;default:now()"`
 }
 
 // TableName tells GORM the exact table name (avoids snake-case rules
@@ -466,33 +468,33 @@ func (s *Store) soft(ctx context.Context, err error, op, variantID, stage string
 // default driver. UpdateEmbedding uses a raw Exec instead; for the
 // canonical UPSERT we don't touch the column.
 type Opportunity struct {
-	CanonicalID   string         `gorm:"primaryKey;column:canonical_id"`
-	Slug          string         `gorm:"column:slug;not null"`
-	Kind          string         `gorm:"column:kind;not null"`
-	SourceID      *string        `gorm:"column:source_id"`
-	Title         string         `gorm:"column:title;not null"`
-	Description   *string        `gorm:"column:description"`
-	IssuingEntity *string        `gorm:"column:issuing_entity"`
-	Country       *string        `gorm:"column:country"`
-	Region        *string        `gorm:"column:region"`
-	City          *string        `gorm:"column:city"`
-	Remote        *bool          `gorm:"column:remote"`
-	ApplyURL      *string        `gorm:"column:apply_url"`
-	PostedAt      *time.Time     `gorm:"column:posted_at"`
-	Deadline      *time.Time     `gorm:"column:deadline"`
-	Currency      *string        `gorm:"column:currency"`
-	AmountMin     *float64       `gorm:"column:amount_min"`
-	AmountMax     *float64       `gorm:"column:amount_max"`
-	EmploymentType *string       `gorm:"column:employment_type"`
-	Seniority      *string       `gorm:"column:seniority"`
-	GeoScope       *string       `gorm:"column:geo_scope"`
-	Status        string         `gorm:"column:status;not null;default:active"`
-	FirstSeenAt   time.Time      `gorm:"column:first_seen_at;not null;default:now()"`
-	LastSeenAt    time.Time      `gorm:"column:last_seen_at;not null;default:now()"`
-	Attributes    map[string]any `gorm:"column:attributes;type:jsonb;serializer:json"`
-	QualityScore  *float64       `gorm:"column:quality_score"`
-	Hidden        bool           `gorm:"column:hidden;not null;default:false"`
-	HiddenReason  *string        `gorm:"column:hidden_reason"`
+	CanonicalID    string         `gorm:"primaryKey;column:canonical_id"`
+	Slug           string         `gorm:"column:slug;not null"`
+	Kind           string         `gorm:"column:kind;not null"`
+	SourceID       *string        `gorm:"column:source_id"`
+	Title          string         `gorm:"column:title;not null"`
+	Description    *string        `gorm:"column:description"`
+	IssuingEntity  *string        `gorm:"column:issuing_entity"`
+	Country        *string        `gorm:"column:country"`
+	Region         *string        `gorm:"column:region"`
+	City           *string        `gorm:"column:city"`
+	Remote         *bool          `gorm:"column:remote"`
+	ApplyURL       *string        `gorm:"column:apply_url"`
+	PostedAt       *time.Time     `gorm:"column:posted_at"`
+	Deadline       *time.Time     `gorm:"column:deadline"`
+	Currency       *string        `gorm:"column:currency"`
+	AmountMin      *float64       `gorm:"column:amount_min"`
+	AmountMax      *float64       `gorm:"column:amount_max"`
+	EmploymentType *string        `gorm:"column:employment_type"`
+	Seniority      *string        `gorm:"column:seniority"`
+	GeoScope       *string        `gorm:"column:geo_scope"`
+	Status         string         `gorm:"column:status;not null;default:active"`
+	FirstSeenAt    time.Time      `gorm:"column:first_seen_at;not null;default:now()"`
+	LastSeenAt     time.Time      `gorm:"column:last_seen_at;not null;default:now()"`
+	Attributes     map[string]any `gorm:"column:attributes;type:jsonb;serializer:json"`
+	QualityScore   *float64       `gorm:"column:quality_score"`
+	Hidden         bool           `gorm:"column:hidden;not null;default:false"`
+	HiddenReason   *string        `gorm:"column:hidden_reason"`
 }
 
 // TableName binds GORM to the table name (the package is variantstate
@@ -505,7 +507,7 @@ func (Opportunity) TableName() string { return "opportunities" }
 //   - canonical_id is the PK; ON CONFLICT updates the row in place.
 //   - last_seen_at always advances; first_seen_at sticks at the
 //     pre-existing value.
-//   - String/numeric fields use COALESCE(NULLIF(EXCLUDED, ''), opp)
+//   - String/numeric fields use COALESCE(NULLIF(EXCLUDED, ”), opp)
 //     so a sparse subsequent variant can't blank an established field.
 //     Same merge philosophy as the in-memory mergeAttributes in the
 //     CanonicalHandler — newer data wins when non-empty, otherwise the
@@ -595,6 +597,42 @@ func (s *Store) UpsertOpportunity(ctx context.Context, o Opportunity) error {
 			attrsJSON, o.QualityScore, o.Hidden, nullStr(o.HiddenReason),
 		).Error
 	return s.soft(ctx, err, "upsert_opportunity", "", o.CanonicalID)
+}
+
+// UpsertCompany records the issuing organisation behind an opportunity: it
+// inserts on first sight (keyed by slug), and on a repeat refreshes last_seen,
+// back-fills logo/website/country once they become known (never clobbering an
+// existing value with NULL), and increments job_count only when this is a newly
+// materialised opportunity (newJob) so re-crawls don't inflate the count.
+// Soft-fails — a companies write must never block the canonical chain.
+func (s *Store) UpsertCompany(ctx context.Context, slug, name string, logoURL, website, country *string, newJob bool) error {
+	if s == nil || s.db == nil || slug == "" || name == "" {
+		return nil
+	}
+	now := time.Now().UTC()
+	inc := 0
+	if newJob {
+		inc = 1
+	}
+	err := s.db(ctx, false).Exec(`
+        INSERT INTO companies (
+            id, slug, name, logo_url, website, country,
+            job_count, first_seen_at, last_seen_at, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (slug) DO UPDATE SET
+            name         = EXCLUDED.name,
+            logo_url     = COALESCE(companies.logo_url, EXCLUDED.logo_url),
+            website      = COALESCE(companies.website, EXCLUDED.website),
+            country      = COALESCE(companies.country, EXCLUDED.country),
+            job_count    = companies.job_count + ?,
+            last_seen_at = EXCLUDED.last_seen_at,
+            updated_at   = EXCLUDED.updated_at`,
+		domain.NewID(), slug, name, logoURL, website, country,
+		inc, now, now, now, now, inc).Error
+	if err != nil {
+		util.Log(ctx).WithError(err).WithField("slug", slug).Warn("variantstate: UpsertCompany failed")
+	}
+	return nil // soft-fail
 }
 
 // EmbeddingDim returns the declared dimension of opportunities.embedding

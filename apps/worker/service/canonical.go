@@ -154,6 +154,23 @@ func (h *CanonicalHandler) Handle(ctx context.Context, _ map[string]string, payl
 	oppRow := snapshotToOpportunity(merged, in.HardKey)
 	_ = h.store.UpsertOpportunity(ctx, oppRow)
 
+	// Company record: upsert the issuing organisation (name + logo + site),
+	// linked to its jobs by issuing_entity. job_count grows only for newly seen
+	// opportunities. Soft-fails inside the store — never blocks the chain.
+	if slug := domain.CompanySlug(merged.Company); slug != "" {
+		ptr := func(s string) *string {
+			if s != "" {
+				return &s
+			}
+			return nil
+		}
+		_ = h.store.UpsertCompany(ctx, slug, merged.Company,
+			ptr(attrStr(merged.Attributes, "company_logo")),
+			ptr(attrStr(merged.Attributes, "company_website")),
+			ptr(merged.Country),
+			prev.FirstSeenAt.IsZero())
+	}
+
 	outEnv := eventsv1.NewEnvelope(eventsv1.TopicCanonicalsUpserted, out)
 	body, err := json.Marshal(outEnv)
 	if err != nil {
