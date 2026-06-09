@@ -1,6 +1,7 @@
 package recipe
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -74,4 +75,14 @@ func TestValidate_RejectsUnknownFromSource(t *testing.T) {
 	err := r.Validate()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "ouija")
+}
+
+func TestRecipeJSON_OmitsEmptyExtractors(t *testing.T) {
+	b, err := json.Marshal(validRecipe())
+	require.NoError(t, err)
+	s := string(b)
+	// Optional empty extractors must not serialize as empty objects.
+	assert.NotContains(t, s, `"location_text":{}`)
+	assert.NotContains(t, s, `"cursor":{}`)
+	assert.NotContains(t, s, `"company_logo_url":{}`)
 }

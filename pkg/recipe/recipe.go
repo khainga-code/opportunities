@@ -41,14 +41,14 @@ func (fx FieldExtractor) empty() bool {
 type KindRule struct {
 	Mode  string         `json:"mode"`
 	Fixed string         `json:"fixed,omitempty"`
-	Path  FieldExtractor `json:"path,omitempty"`
+	Path  FieldExtractor `json:"path,omitzero"`
 }
 
 type Pagination struct {
 	Mode     string         `json:"mode"`
 	Param    string         `json:"param,omitempty"`
-	Cursor   FieldExtractor `json:"cursor,omitempty"`
-	Next     FieldExtractor `json:"next,omitempty"`
+	Cursor   FieldExtractor `json:"cursor,omitzero"`
+	Next     FieldExtractor `json:"next,omitzero"`
 	MaxPages int            `json:"max_pages,omitempty"`
 }
 
@@ -59,29 +59,31 @@ type ListRule struct {
 	Params       map[string]string `json:"params,omitempty"`
 	ItemsPath    string            `json:"items_path,omitempty"`
 	ItemSelector string            `json:"item_selector,omitempty"`
-	Link         FieldExtractor    `json:"link,omitempty"`
+	Link         FieldExtractor    `json:"link,omitzero"`
 	Pagination   Pagination        `json:"pagination"`
 }
 
 type DetailRule struct {
+	// RecordSource enum (api|json_ld|next_data|microdata|html) is validated by
+	// the executor (Plan 2), not by Validate().
 	RecordSource string `json:"record_source"`
 
 	Title         FieldExtractor `json:"title"`
 	Description   FieldExtractor `json:"description"`
 	IssuingEntity FieldExtractor `json:"issuing_entity"`
 	ApplyURL      FieldExtractor `json:"apply_url"`
-	LocationText  FieldExtractor `json:"location_text,omitempty"`
+	LocationText  FieldExtractor `json:"location_text,omitzero"`
 	AnchorCountry FieldExtractor `json:"anchor_country"`
-	Remote        FieldExtractor `json:"remote,omitempty"`
-	PostedAt      FieldExtractor `json:"posted_at,omitempty"`
-	Deadline      FieldExtractor `json:"deadline,omitempty"`
-	AmountMin     FieldExtractor `json:"amount_min,omitempty"`
-	AmountMax     FieldExtractor `json:"amount_max,omitempty"`
-	Currency      FieldExtractor `json:"currency,omitempty"`
-	Categories    FieldExtractor `json:"categories,omitempty"`
+	Remote        FieldExtractor `json:"remote,omitzero"`
+	PostedAt      FieldExtractor `json:"posted_at,omitzero"`
+	Deadline      FieldExtractor `json:"deadline,omitzero"`
+	AmountMin     FieldExtractor `json:"amount_min,omitzero"`
+	AmountMax     FieldExtractor `json:"amount_max,omitzero"`
+	Currency      FieldExtractor `json:"currency,omitzero"`
+	Categories    FieldExtractor `json:"categories,omitzero"`
 
-	CompanyLogoURL FieldExtractor `json:"company_logo_url,omitempty"`
-	CompanyProfile FieldExtractor `json:"company_profile,omitempty"`
+	CompanyLogoURL FieldExtractor `json:"company_logo_url,omitzero"`
+	CompanyProfile FieldExtractor `json:"company_profile,omitzero"`
 
 	Attributes map[string]FieldExtractor `json:"attributes,omitempty"`
 }
