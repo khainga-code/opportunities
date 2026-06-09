@@ -738,6 +738,27 @@ func main() {
 	adminMux.HandleFunc("POST /admin/sources/health-decay",
 		service.HealthDecayHandler(sourceRepo))
 
+	// Admin: enqueue AI recipe generation for recipe-less sources. Trustage fires
+	// this every 15 min; see definitions/trustage/sources-recipe-backfill.json.
+	// No-op while RECIPE_ENABLED=false. The endpoint only enumerates + emits
+	// recipe.generate.v1; generation runs on the event consumers, so it scales by
+	// adding crawler replicas.
+	adminMux.HandleFunc("POST /admin/recipes/backfill",
+		service.RecipeBackfillHandler(service.RecipeBackfillDeps{
+			Sources: sourceRepo,
+			Enabled: cfg.RecipeEnabled,
+			Targets: service.UniversalRecipeTargets,
+			Limit:   1000,
+			Emit: func(emitCtx context.Context, sourceID string) error {
+				evtMgr := svc.EventsManager()
+				if evtMgr == nil {
+					return fmt.Errorf("recipe-backfill: events manager not configured")
+				}
+				env := eventsv1.NewEnvelope(eventsv1.TopicRecipeGenerate, eventsv1.RecipeGenerateV1{SourceID: sourceID})
+				return evtMgr.Emit(emitCtx, eventsv1.TopicRecipeGenerate, env)
+			},
+		}))
+
 	// Admin: backpressure state — operator-facing visibility into the
 	// gate. Useful for dashboards and for confirming the Trustage
 	// workflow is correctly no-op'ing during saturation.
