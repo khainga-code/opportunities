@@ -23,6 +23,11 @@ type CrawlerConfig struct {
 	UserAgent                 string `env:"USER_AGENT" envDefault:"opportunities-bot/2.0 (+https://opportunities.stawi.org)"`
 	HTTPTimeoutSec            int    `env:"HTTP_TIMEOUT_SEC" envDefault:"20"`
 
+	// CrawlTickBatch caps how many due sources the central crawl tick
+	// (POST /admin/sources/crawl-due, fired by source-crawl-tick.json) dispatches
+	// per run. Backpressure stops the batch early when the pipeline saturates.
+	CrawlTickBatch int `env:"CRAWL_TICK_BATCH" envDefault:"25"`
+
 	// Unblocker fallback: when a direct fetch is blocked (403/429/451/503 or a
 	// transport error), the request is retried through this proxy — a Bright
 	// Data Web Unlocker / Oxylabs / similar endpoint, e.g.

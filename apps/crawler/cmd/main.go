@@ -743,6 +743,13 @@ func main() {
 	adminMux.HandleFunc("POST /admin/sources/{id}/crawl",
 		service.SourceCrawlHandler(svc, sourceRepo, bpGate))
 
+	// Central crawl driver: a single static Trustage cron
+	// (definitions/trustage/source-crawl-tick.json) POSTs this every 15 min to
+	// dispatch due sources, backpressure-gated. Reliable replacement for the
+	// per-source dynamic workflows.
+	adminMux.HandleFunc("POST /admin/sources/crawl-due",
+		service.CrawlDueHandler(svc, sourceRepo, sourceRepo, bpGate, cfg.CrawlTickBatch))
+
 	// Schedule reconcile backstop: Trustage fires this periodically to heal
 	// drift between sources.status and the per-source Trustage schedules.
 	adminMux.HandleFunc("POST /admin/sources/schedules/reconcile",
