@@ -43,6 +43,7 @@ func migratePool(ctx context.Context, dbPool pool.Pool, migrationsDirPath string
 		&domain.Source{},
 		&domain.RawRef{},
 		&SourceRecipe{},
+		&domain.Company{},
 	); err != nil {
 		return fmt.Errorf("pool migrate: %w", err)
 	}
