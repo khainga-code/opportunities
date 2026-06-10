@@ -31,6 +31,7 @@ import (
 	"github.com/stawi-opportunities/opportunities/pkg/geocode"
 	"github.com/stawi-opportunities/opportunities/pkg/normalize"
 	"github.com/stawi-opportunities/opportunities/pkg/opportunity"
+	"github.com/stawi-opportunities/opportunities/pkg/recipe"
 	"github.com/stawi-opportunities/opportunities/pkg/repository"
 	"github.com/stawi-opportunities/opportunities/pkg/seeds"
 	"github.com/stawi-opportunities/opportunities/pkg/services"
@@ -149,7 +150,26 @@ func main() {
 	httpDoer := &http.Client{
 		Timeout: time.Duration(cfg.HTTPTimeoutSec) * time.Second,
 	}
-	httpClient := httpx.NewClientFromDoer(httpDoer, cfg.UserAgent)
+	// Unblocker fallback: route blocked requests (WAF/anti-bot 403s on HTML job
+	// boards) through a residential-unblocker proxy, while requests that succeed
+	// directly (most JSON APIs) stay off the paid path.
+	var doer httpx.HTTPDoer = httpDoer
+	if cfg.UnblockerProxyURL != "" {
+		unblocker, insecure, perr := httpx.NewProxyDoer(
+			cfg.UnblockerProxyURL, cfg.UnblockerCACert,
+			time.Duration(cfg.UnblockerTimeoutSec)*time.Second)
+		if perr != nil {
+			log.WithError(perr).Warn("unblocker fallback disabled: invalid UNBLOCKER_PROXY_URL")
+		} else {
+			doer = httpx.NewFallbackDoer(httpDoer, unblocker)
+			if insecure {
+				log.Warn("unblocker fallback enabled WITHOUT a pinned CA — proxy TLS is not verified; set UNBLOCKER_CA_CERT")
+			} else {
+				log.Info("unblocker fallback enabled (CA-pinned) for blocked requests")
+			}
+		}
+	}
+	httpClient := httpx.NewClientFromDoer(doer, cfg.UserAgent)
 
 	// AI extractor — OpenAI-compatible back-end. Reads INFERENCE_* first,
 	// falls back to the legacy OLLAMA_* vars during the Cloudflare AI
@@ -165,9 +185,9 @@ func main() {
 			cfg.OllamaURL, cfg.OllamaModel,
 		)
 		extractor = extraction.New(extraction.Config{
-			BaseURL:          infBase,
-			APIKey:           infKey,
-			Model:            infModel,
+			BaseURL:             infBase,
+			APIKey:              infKey,
+			Model:               infModel,
 			EmbeddingBaseURL:    embBase,
 			EmbeddingAPIKey:     embKey,
 			EmbeddingModel:      embModel,
@@ -182,7 +202,10 @@ func main() {
 			// with INFERENCE_API_KEY directly, not Hydra-issued JWTs.
 			// Frame's HTTPClientManager would attach an OAuth Bearer
 			// targeting our own audience list and fail at the signer.
-			HTTPClient: httpDoer,
+			//
+			// Its own timeout (InferenceTimeoutSec) — NOT the 20s page-fetch
+			// httpDoer, which timed out every real extraction mid-generation.
+			HTTPClient: &http.Client{Timeout: time.Duration(cfg.InferenceTimeoutSec) * time.Second},
 		})
 		log.WithField("url", infBase).WithField("model", infModel).Info("AI extraction enabled")
 	}
@@ -323,6 +346,7 @@ func main() {
 	// outage degrades resumption to "always start fresh" rather than
 	// stalling the crawl.
 	checkpointRepo := repository.NewCheckpointRepository(dbFn)
+	recipeRepo := repository.NewRecipeRepository(dbFn)
 
 	// URL frontier (D2) — discovered URLs from frontier-enabled
 	// sources land here; apps/frontier-worker pulls + fetches them.
@@ -373,8 +397,29 @@ func main() {
 		CrawlRepo:         crawlRepo,
 		CheckpointRepo:    checkpointRepo,
 		Frontier:          urlFrontier,
+		RecipeRepo:        recipeRepo,
+		RecipeEnabled:     cfg.RecipeEnabled,
 	})
 	pageDoneH := service.NewPageCompletedHandler(sourceRepo)
+	// Drift-triggered recipe regeneration: when a recipe-driven source's
+	// reject rate crosses the threshold, the page-completed handler emits
+	// recipe.regenerate.v1 so the generator re-synthesises off fresh pages.
+	// Only wired when recipe generation is enabled.
+	if cfg.RecipeEnabled {
+		pageDoneH.RegenRejectRate = cfg.RecipeRegenRejectRate
+		pageDoneH.RegenMinPages = cfg.RecipeRegenMinPages
+		pageDoneH.EmitRegenerate = func(emitCtx context.Context, sourceID, reason string) {
+			evtMgr := svc.EventsManager()
+			if evtMgr == nil {
+				return
+			}
+			env := eventsv1.NewEnvelope(eventsv1.TopicRecipeRegenerate, eventsv1.RecipeRegenerateV1{SourceID: sourceID})
+			if err := evtMgr.Emit(emitCtx, eventsv1.TopicRecipeRegenerate, env); err != nil {
+				util.Log(emitCtx).WithError(err).WithField("source_id", sourceID).
+					WithField("reason", reason).Warn("recipe: drift regenerate emit failed")
+			}
+		}
+	}
 	srcDiscH := service.NewSourceDiscoveredHandler(sourceRepo, reg)
 
 	// Inbox pump: drain crawl_inbox → pl_ingested, but only while the queue has
@@ -435,6 +480,27 @@ func main() {
 		}
 		handlers = append(handlers, definitions.NewBroadcastConsumer(loader, rebuild))
 		log.WithField("topic", eventsv1.TopicDefinitionsChanged).Info("definitions: broadcast consumer wired")
+	}
+
+	// Recipe generate/regenerate handlers. Only wired when RECIPE_ENABLED
+	// and an AI extractor is configured — the Generator needs an LLM seam
+	// (extractor.Complete) to synthesise recipes. The two handlers consume
+	// recipe.generate.v1 / recipe.regenerate.v1 and run the
+	// Generator → Validator → Store pipeline, activating on a pass-rate gate.
+	if cfg.RecipeEnabled && extractor != nil {
+		recipeGen := recipe.NewGenerator(extractor, recipe.NewHTTPFetcher(httpClient), reg, cfg.RecipeMaxGenAttempts)
+		recipeDeps := service.RecipeHandlerDeps{
+			Sources: sourceRepo, Recipes: recipeRepo, Generator: recipeGen, Registry: reg,
+			Fetcher: recipe.NewHTTPFetcher(httpClient), Flagger: sourceRepo,
+			Samples: recipeRepo, SampleCount: cfg.RecipeSampleCount, Model: cfg.InferenceModel,
+			PassThreshold: cfg.RecipePassThreshold,
+		}
+		handlers = append(handlers,
+			service.NewRecipeGenerateHandler(recipeDeps),
+			service.NewRecipeRegenerateHandler(recipeDeps),
+		)
+		log.WithField("topics", []string{eventsv1.TopicRecipeGenerate, eventsv1.TopicRecipeRegenerate}).
+			Info("recipe: generate/regenerate handlers wired")
 	}
 	svc.Init(ctx,
 		frame.WithRegisterEvents(handlers...),
@@ -680,6 +746,13 @@ func main() {
 	adminMux.HandleFunc("POST /admin/sources/{id}/crawl",
 		service.SourceCrawlHandler(svc, sourceRepo, bpGate))
 
+	// Central crawl driver: a single static Trustage cron
+	// (definitions/trustage/source-crawl-tick.json) POSTs this every 15 min to
+	// dispatch due sources, backpressure-gated. Reliable replacement for the
+	// per-source dynamic workflows.
+	adminMux.HandleFunc("POST /admin/sources/crawl-due",
+		service.CrawlDueHandler(svc, sourceRepo, sourceRepo, bpGate, cfg.CrawlTickBatch))
+
 	// Schedule reconcile backstop: Trustage fires this periodically to heal
 	// drift between sources.status and the per-source Trustage schedules.
 	adminMux.HandleFunc("POST /admin/sources/schedules/reconcile",
@@ -694,6 +767,27 @@ func main() {
 	// Trustage fires this hourly; see definitions/trustage/sources-health-decay.json.
 	adminMux.HandleFunc("POST /admin/sources/health-decay",
 		service.HealthDecayHandler(sourceRepo))
+
+	// Admin: enqueue AI recipe generation for recipe-less sources. Trustage fires
+	// this every 15 min; see definitions/trustage/sources-recipe-backfill.json.
+	// No-op while RECIPE_ENABLED=false. The endpoint only enumerates + emits
+	// recipe.generate.v1; generation runs on the event consumers, so it scales by
+	// adding crawler replicas.
+	adminMux.HandleFunc("POST /admin/recipes/backfill",
+		service.RecipeBackfillHandler(service.RecipeBackfillDeps{
+			Sources: sourceRepo,
+			Enabled: cfg.RecipeEnabled,
+			Targets: service.UniversalRecipeTargets,
+			Limit:   cfg.RecipeBackfillLimit,
+			Emit: func(emitCtx context.Context, sourceID string) error {
+				evtMgr := svc.EventsManager()
+				if evtMgr == nil {
+					return fmt.Errorf("recipe-backfill: events manager not configured")
+				}
+				env := eventsv1.NewEnvelope(eventsv1.TopicRecipeGenerate, eventsv1.RecipeGenerateV1{SourceID: sourceID})
+				return evtMgr.Emit(emitCtx, eventsv1.TopicRecipeGenerate, env)
+			},
+		}))
 
 	// Admin: backpressure state — operator-facing visibility into the
 	// gate. Useful for dashboards and for confirming the Trustage

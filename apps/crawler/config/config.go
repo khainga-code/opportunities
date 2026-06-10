@@ -20,8 +20,39 @@ type CrawlerConfig struct {
 	// idiom; must match the worker's ingested queue.
 	QueuePipelineIngested     string `env:"QUEUE_PIPELINE_INGESTED_URI"  envDefault:"mem://pipeline_ingested"`
 	QueuePipelineIngestedName string `env:"QUEUE_PIPELINE_INGESTED_NAME" envDefault:"pipeline_ingested"`
-	UserAgent         string `env:"USER_AGENT" envDefault:"opportunities-bot/2.0 (+https://opportunities.stawi.org)"`
-	HTTPTimeoutSec    int    `env:"HTTP_TIMEOUT_SEC" envDefault:"20"`
+	UserAgent                 string `env:"USER_AGENT" envDefault:"opportunities-bot/2.0 (+https://opportunities.stawi.org)"`
+	HTTPTimeoutSec            int    `env:"HTTP_TIMEOUT_SEC" envDefault:"20"`
+
+	// InferenceTimeoutSec bounds a single LLM call (extraction / recipe
+	// synthesis). It must be far larger than HTTPTimeoutSec: page fetches want
+	// to fail fast, but an LLM generating full JSON from a long page routinely
+	// takes 10–60s. Reusing the 20s page-fetch client here silently timed out
+	// every real extraction ("Client.Timeout exceeded while awaiting headers").
+	InferenceTimeoutSec int `env:"INFERENCE_TIMEOUT_SEC" envDefault:"120"`
+
+	// CrawlTickBatch caps how many due sources the central crawl tick
+	// (POST /admin/sources/crawl-due, fired by source-crawl-tick.json) dispatches
+	// per run. Backpressure stops the batch early when the pipeline saturates.
+	CrawlTickBatch int `env:"CRAWL_TICK_BATCH" envDefault:"25"`
+
+	// RecipeBackfillLimit caps how many recipe-less sources the backfill cron
+	// enqueues for generation per run. Each generation makes several LLM calls,
+	// so enqueuing all sources at once bursts past a shared inference tier's
+	// rate limit. Keep this small (e.g. 2–3) on a rate-limited tier so
+	// generation paces under the cap; raise it with in-cluster/high-tier
+	// inference. The cron fires every 15 min, so N here ≈ N recipes per 15 min.
+	RecipeBackfillLimit int `env:"RECIPE_BACKFILL_LIMIT" envDefault:"25"`
+
+	// Unblocker fallback: when a direct fetch is blocked (403/429/451/503 or a
+	// transport error), the request is retried through this proxy — a Bright
+	// Data Web Unlocker / Oxylabs / similar endpoint, e.g.
+	// http://brd-customer-<id>-zone-<zone>:<pass>@brd.superproxy.io:33335
+	// Empty disables the fallback (direct-only, current behaviour). Pin the
+	// provider's CA via UnblockerCACert to verify the proxy's re-signed TLS;
+	// without it, verification on the proxy transport is skipped.
+	UnblockerProxyURL   string `env:"UNBLOCKER_PROXY_URL"`
+	UnblockerCACert     string `env:"UNBLOCKER_CA_CERT"`
+	UnblockerTimeoutSec int    `env:"UNBLOCKER_TIMEOUT_SEC" envDefault:"60"`
 
 	// EnrichConcurrency caps the parallel fetch+LLM-extract calls
 	// per crawler page for URL-only stubs (sitemap + universal
@@ -53,12 +84,12 @@ type CrawlerConfig struct {
 	// Reranker — carried for consistency with the other apps. Crawler
 	// doesn't currently rerank, but having the knobs in one config struct
 	// keeps copy-paste safe.
-	RerankBaseURL     string `env:"RERANK_BASE_URL" envDefault:""`
-	RerankAPIKey      string `env:"RERANK_API_KEY" envDefault:""`
-	RerankModel       string `env:"RERANK_MODEL" envDefault:""`
+	RerankBaseURL string `env:"RERANK_BASE_URL" envDefault:""`
+	RerankAPIKey  string `env:"RERANK_API_KEY" envDefault:""`
+	RerankModel   string `env:"RERANK_MODEL" envDefault:""`
 	// RerankDialect: "tei" (default) or "openai"/"siliconflow" for /v1/rerank.
-	RerankDialect     string `env:"RERANK_DIALECT" envDefault:""`
-	ValkeyAddr string `env:"VALKEY_ADDR" envDefault:""`
+	RerankDialect string `env:"RERANK_DIALECT" envDefault:""`
+	ValkeyAddr    string `env:"VALKEY_ADDR" envDefault:""`
 
 	// Cloudflare R2 — one account token authorised on all three
 	// product-opportunities buckets. Bucket names live in the static
@@ -140,6 +171,17 @@ type CrawlerConfig struct {
 	// Defaults off so the rollout can enable it explicitly alongside the still-
 	// running central tick (the two are idempotent via the crawl minute key).
 	SourceSchedulesEnabled bool `env:"SOURCE_SCHEDULES_ENABLED" envDefault:"false"`
+
+	// Recipe generation knobs. All default to off / conservative values so
+	// the feature ships dormant (RECIPE_ENABLED=false) and is enabled
+	// per-deploy. See docs/superpowers/specs/2026-06-09-ai-generated-extraction-recipes-design.md §5H.
+	RecipeEnabled          bool    `env:"RECIPE_ENABLED"            envDefault:"false"`
+	RecipeSampleCount      int     `env:"RECIPE_SAMPLE_COUNT"       envDefault:"4"` // reserved for Plan 5 backfill sampling
+	RecipePassThreshold    float64 `env:"RECIPE_PASS_THRESHOLD"     envDefault:"0.8"`
+	RecipeMaxGenAttempts   int     `env:"RECIPE_MAX_GEN_ATTEMPTS"   envDefault:"3"`
+	RecipeRegenRejectRate  float64 `env:"RECIPE_REGEN_REJECT_RATE"  envDefault:"0.5"`
+	RecipeRegenMinPages    int     `env:"RECIPE_REGEN_MIN_PAGES"    envDefault:"20"`
+	RecipeMaxRegenFailures int     `env:"RECIPE_MAX_REGEN_FAILURES" envDefault:"3"`
 
 	// Analytics (OpenObserve) — shared across every opportunities service.
 	AnalyticsBaseURL  string `env:"ANALYTICS_BASE_URL" envDefault:""`
