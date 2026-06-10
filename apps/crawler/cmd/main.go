@@ -202,7 +202,10 @@ func main() {
 			// with INFERENCE_API_KEY directly, not Hydra-issued JWTs.
 			// Frame's HTTPClientManager would attach an OAuth Bearer
 			// targeting our own audience list and fail at the signer.
-			HTTPClient: httpDoer,
+			//
+			// Its own timeout (InferenceTimeoutSec) — NOT the 20s page-fetch
+			// httpDoer, which timed out every real extraction mid-generation.
+			HTTPClient: &http.Client{Timeout: time.Duration(cfg.InferenceTimeoutSec) * time.Second},
 		})
 		log.WithField("url", infBase).WithField("model", infModel).Info("AI extraction enabled")
 	}
