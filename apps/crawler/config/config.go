@@ -23,6 +23,13 @@ type CrawlerConfig struct {
 	UserAgent                 string `env:"USER_AGENT" envDefault:"opportunities-bot/2.0 (+https://opportunities.stawi.org)"`
 	HTTPTimeoutSec            int    `env:"HTTP_TIMEOUT_SEC" envDefault:"20"`
 
+	// InferenceTimeoutSec bounds a single LLM call (extraction / recipe
+	// synthesis). It must be far larger than HTTPTimeoutSec: page fetches want
+	// to fail fast, but an LLM generating full JSON from a long page routinely
+	// takes 10–60s. Reusing the 20s page-fetch client here silently timed out
+	// every real extraction ("Client.Timeout exceeded while awaiting headers").
+	InferenceTimeoutSec int `env:"INFERENCE_TIMEOUT_SEC" envDefault:"120"`
+
 	// CrawlTickBatch caps how many due sources the central crawl tick
 	// (POST /admin/sources/crawl-due, fired by source-crawl-tick.json) dispatches
 	// per run. Backpressure stops the batch early when the pipeline saturates.
