@@ -35,6 +35,14 @@ type CrawlerConfig struct {
 	// per run. Backpressure stops the batch early when the pipeline saturates.
 	CrawlTickBatch int `env:"CRAWL_TICK_BATCH" envDefault:"25"`
 
+	// RecipeBackfillLimit caps how many recipe-less sources the backfill cron
+	// enqueues for generation per run. Each generation makes several LLM calls,
+	// so enqueuing all sources at once bursts past a shared inference tier's
+	// rate limit. Keep this small (e.g. 2–3) on a rate-limited tier so
+	// generation paces under the cap; raise it with in-cluster/high-tier
+	// inference. The cron fires every 15 min, so N here ≈ N recipes per 15 min.
+	RecipeBackfillLimit int `env:"RECIPE_BACKFILL_LIMIT" envDefault:"25"`
+
 	// Unblocker fallback: when a direct fetch is blocked (403/429/451/503 or a
 	// transport error), the request is retried through this proxy — a Bright
 	// Data Web Unlocker / Oxylabs / similar endpoint, e.g.

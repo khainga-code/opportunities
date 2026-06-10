@@ -778,7 +778,7 @@ func main() {
 			Sources: sourceRepo,
 			Enabled: cfg.RecipeEnabled,
 			Targets: service.UniversalRecipeTargets,
-			Limit:   1000,
+			Limit:   cfg.RecipeBackfillLimit,
 			Emit: func(emitCtx context.Context, sourceID string) error {
 				evtMgr := svc.EventsManager()
 				if evtMgr == nil {
